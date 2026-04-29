@@ -276,6 +276,7 @@ export default [
     name: 'accessControl',
     path: '/access-control',
     key: 'accessControl',
+    access: 'canSeeAdmin',
     routes: [
       {
         path: '/access-control',
@@ -308,16 +309,8 @@ export default [
         icon: 'icon-users',
         selectedIcon: 'icon-users-filled',
         defaultIcon: 'icon-users',
+        access: 'canSeeAdmin',
         component: './user-groups'
-      },
-      {
-        name: 'apikeys',
-        path: '/access-control/api-keys',
-        key: 'apikeys',
-        selectedIcon: 'icon-key-filled',
-        icon: 'icon-key',
-        defaultIcon: 'icon-key',
-        component: './api-keys'
       }
     ]
   },

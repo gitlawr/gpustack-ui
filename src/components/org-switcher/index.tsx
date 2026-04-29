@@ -155,20 +155,22 @@ const OrgSwitcher: React.FC = () => {
 
   menuItems.push(...orgItems);
 
-  menuItems.push({
-    type: 'divider' as const
-  });
-  menuItems.push({
-    key: 'manage',
-    label: (
-      <span className="flex-center gap-8" onClick={handleManage}>
-        <SettingOutlined />
-        <span style={{ marginLeft: 8 }}>
-          {intl.formatMessage({ id: 'organizations.menu.manage' })}
+  // "Manage Organizations" routes to an admin-only page; only show it
+  // for platform admins.
+  if (isAdmin) {
+    menuItems.push({ type: 'divider' as const });
+    menuItems.push({
+      key: 'manage',
+      label: (
+        <span className="flex-center gap-8" onClick={handleManage}>
+          <SettingOutlined />
+          <span style={{ marginLeft: 8 }}>
+            {intl.formatMessage({ id: 'organizations.menu.manage' })}
+          </span>
         </span>
-      </span>
-    )
-  });
+      )
+    });
+  }
 
   const triggerLabel =
     currentId == null && isAdmin

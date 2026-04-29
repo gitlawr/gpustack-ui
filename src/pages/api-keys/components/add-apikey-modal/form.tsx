@@ -4,6 +4,7 @@ import {
 } from '@/atoms/organization';
 import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
+import { queryOrganizationsList } from '@/services/organizations/apis';
 import { useModel } from '@@/plugin-model';
 import {
   Input as CInput,
@@ -11,9 +12,9 @@ import {
   Select as SealSelect
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
-import { Form, Tag } from 'antd';
+import { Form } from 'antd';
 import { useAtomValue } from 'jotai';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { expirationOptions } from '../../config';
 import { FormData, ListItem } from '../../config/types';
 import AllowModelsForm from './allow-models';
@@ -29,57 +30,29 @@ const APIKeyForm: React.FC<{
   const orgList = useAtomValue(organizationListAtom);
   const { initialState } = useModel('@@initialState') || {};
   const isAdmin = !!initialState?.currentUser?.is_admin;
-  // Admin in Platform-wide mode has no current org context — they need to
-  // pick which org the key gets bound to. For everyone else the org is
-  // implicit (the active switcher value).
-  const needsOrgPicker = action === PageAction.CREATE && isAdmin && !currentOrg;
+
+  // Admin can bind a key to any Org on the platform (act-as semantics);
+  // non-admin users can only pick from Orgs they're a member of. Fetch
+  // the full list once when the form mounts as admin; otherwise use the
+  // already-loaded membership list.
+  const [adminOrgList, setAdminOrgList] = useState<
+    { id: number; name: string }[]
+  >([]);
+  useEffect(() => {
+    if (!isAdmin || action !== PageAction.CREATE) return;
+    queryOrganizationsList({ page: -1 }).then((res: any) => {
+      const items = res?.items || res || [];
+      setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
+    });
+  }, [isAdmin, action]);
+
+  const orgOptions = (isAdmin ? adminOrgList : orgList).map((o) => ({
+    value: o.id,
+    label: o.name
+  }));
 
   return (
     <>
-      {action === PageAction.CREATE && currentOrg && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 16,
-            padding: '8px 12px',
-            background: 'var(--ant-color-fill-tertiary)',
-            borderRadius: 6
-          }}
-        >
-          <span style={{ color: 'var(--ant-color-text-tertiary)' }}>
-            {intl.formatMessage({ id: 'apikeys.form.organization' })}:
-          </span>
-          <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-            {currentOrg.name}
-          </Tag>
-        </div>
-      )}
-      {needsOrgPicker && (
-        <Form.Item<FormData>
-          name="target_organization_id"
-          rules={[
-            {
-              required: true,
-              message: intl.formatMessage(
-                { id: 'common.form.rule.select' },
-                {
-                  name: intl.formatMessage({
-                    id: 'apikeys.form.organization'
-                  })
-                }
-              )
-            }
-          ]}
-        >
-          <SealSelect
-            label={intl.formatMessage({ id: 'apikeys.form.organization' })}
-            required
-            options={orgList.map((o) => ({ value: o.id, label: o.name }))}
-          />
-        </Form.Item>
-      )}
       <Form.Item<FormData>
         name="name"
         rules={[
@@ -101,6 +74,31 @@ const APIKeyForm: React.FC<{
           required
         ></CInput.Input>
       </Form.Item>
+      {action === PageAction.CREATE && (
+        <Form.Item<FormData>
+          name="target_organization_id"
+          initialValue={currentOrg?.id}
+          rules={[
+            {
+              required: true,
+              message: intl.formatMessage(
+                { id: 'common.form.rule.select' },
+                {
+                  name: intl.formatMessage({
+                    id: 'apikeys.form.organization'
+                  })
+                }
+              )
+            }
+          ]}
+        >
+          <SealSelect
+            label={intl.formatMessage({ id: 'apikeys.form.organization' })}
+            required
+            options={orgOptions}
+          />
+        </Form.Item>
+      )}
 
       <Form.Item<FormData>
         name="expires_in"
