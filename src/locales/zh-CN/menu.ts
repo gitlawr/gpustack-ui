@@ -35,6 +35,8 @@ export default {
   'menu.accessControl': '访问控制',
   'menu.accessControl.apikeys': 'API 密钥',
   'menu.accessControl.users': '用户',
+  'menu.accessControl.organizations': '组织',
+  'menu.accessControl.userGroups': '用户组',
   'menu.clusterManagement': '集群管理',
   'menu.clusterManagement.clusters': '集群',
   'menu.clusterManagement.credentials': '云凭证',

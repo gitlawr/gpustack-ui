@@ -33,6 +33,8 @@ export default {
   'menu.accessControl': 'Управление доступом',
   'menu.accessControl.apikeys': 'API Ключи',
   'menu.accessControl.users': 'Пользователи',
+  'menu.accessControl.organizations': 'Организации',
+  'menu.accessControl.userGroups': 'Группы пользователей',
   'menu.clusterManagement': 'Управление кластерами',
   'menu.clusterManagement.clusters': 'Кластеры',
   'menu.clusterManagement.credentials': 'Облачные аккаунты',

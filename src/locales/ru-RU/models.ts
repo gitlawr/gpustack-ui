@@ -208,6 +208,10 @@ export default {
   'models.accessSettings.public': 'Публичный',
   'models.accessSettings.authed': 'Аутентифицированный',
   'models.accessSettings.allowedUsers': 'Разрешенные пользователи',
+  'models.accessSettings.allowedPrincipals': 'Разрешённые принципалы',
+  'models.accessSettings.allowedPrincipals.tips':
+    'Публикация для выбранных организаций, групп или пользователей.',
+  'models.accessSettings.principals': 'Принципалы',
   'models.accessSettings.public.tips':
     'При публичном доступе любой пользователь может получить доступ к модели без аутентификации, что может привести к риску утечки данных.',
   'models.table.button.deploy': 'Развернуть сейчас',

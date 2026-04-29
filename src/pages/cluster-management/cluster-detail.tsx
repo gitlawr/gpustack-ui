@@ -8,7 +8,9 @@ import { Tabs } from 'antd';
 import { useAtomValue } from 'jotai';
 import { PageContainerInner } from '../_components/page-box';
 import PageBreadcrumb from '../_components/page-breadcrumb';
+import ClusterAccessTab from './components/detail/cluster-access';
 import ClusterBasic from './components/detail/cluster-basic';
+import ClusterQuotasTab from './components/detail/cluster-quotas';
 import ClusterSystemLoad from './components/detail/cluster-system-load';
 
 const ClusterDetailModal = () => {
@@ -59,6 +61,18 @@ const ClusterDetailModal = () => {
             label: `GPUs`,
             icon: <IconFont type="icon-gpu1" />,
             children: <GPUList />
+          },
+          {
+            key: 'access',
+            label: intl.formatMessage({ id: 'organizations.access.title' }),
+            icon: <IconFont type="icon-key" />,
+            children: <ClusterAccessTab clusterId={Number(id)} />
+          },
+          {
+            key: 'quotas',
+            label: intl.formatMessage({ id: 'organizations.quotas.title' }),
+            icon: <IconFont type="icon-speed" />,
+            children: <ClusterQuotasTab clusterId={Number(id)} />
           }
         ]}
       />

@@ -11,7 +11,7 @@ import {
   type TableColumnProps as SealColumnProps
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
-import { Tooltip } from 'antd';
+import { Tooltip, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useAtomValue } from 'jotai';
 import { useMemo } from 'react';
@@ -102,7 +102,9 @@ const useClusterColumns = (
         render: (text: string, record: ClusterListItem) => (
           <>
             <AutoTooltip ghost>
-              <span className="text-primary">{record.name}</span>
+              <Typography.Link onClick={() => onCellClick?.(record, 'name')}>
+                {record.name}
+              </Typography.Link>
             </AutoTooltip>
             {record.is_default && (
               <Tooltip

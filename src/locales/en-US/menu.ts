@@ -31,6 +31,8 @@ export default {
   'menu.accessControl': 'Access Control',
   'menu.accessControl.apikeys': 'API Keys',
   'menu.accessControl.users': 'Users',
+  'menu.accessControl.organizations': 'Organizations',
+  'menu.accessControl.userGroups': 'User Groups',
   'menu.profile': 'Profile',
   'menu.login': 'Login',
   'menu.usage': 'Usage',

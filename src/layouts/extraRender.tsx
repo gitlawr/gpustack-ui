@@ -1,4 +1,5 @@
 import { GPUStackVersionAtom, UpdateCheckAtom } from '@/atoms/user';
+import OrgSwitcher from '@/components/org-switcher';
 import VersionInfo, { modalConfig } from '@/components/version-info';
 import externalLinks from '@/constants/external-links';
 import useBodyScroll from '@/hooks/use-body-scroll';
@@ -271,6 +272,7 @@ export const ExtraContent = (props: { isDarkTheme?: boolean }) => {
   return (
     <Wrapper>
       {contextHolder}
+      <OrgSwitcher />
       <div
         style={{
           display: 'flex',

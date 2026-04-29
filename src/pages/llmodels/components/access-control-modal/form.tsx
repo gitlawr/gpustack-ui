@@ -2,7 +2,15 @@ import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
 import { RouteItem } from '@/pages/model-routes/config/types';
 import { queryUsersList } from '@/pages/users/apis';
-import { DownOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import {
+  queryOrganizationsList,
+  queryUserGroups
+} from '@/services/organizations/apis';
+import {
+  CloseOutlined,
+  DownOutlined,
+  QuestionCircleOutlined
+} from '@ant-design/icons';
 import {
   AlertBlockInfo,
   TooltipList,
@@ -10,6 +18,7 @@ import {
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import {
+  Button,
   Checkbox,
   Dropdown,
   DropdownProps,
@@ -17,6 +26,10 @@ import {
   Form,
   Radio,
   RadioChangeEvent,
+  Select,
+  Space,
+  Table,
+  Tag,
   Tooltip
 } from 'antd';
 import {
@@ -29,7 +42,11 @@ import {
 } from 'react';
 import styled from 'styled-components';
 import { queryModelAccessUserList } from '../../apis';
-import { AccessControlFormData } from '../../config/types';
+import {
+  AccessControlFormData,
+  AccessPrincipal,
+  AccessPrincipalType
+} from '../../config/types';
 
 type TransferKey = string | number | bigint;
 
@@ -50,6 +67,13 @@ const accessScopeTips = [
   },
   {
     title: {
+      text: 'models.accessSettings.allowedPrincipals',
+      locale: true
+    },
+    tips: 'models.accessSettings.allowedPrincipals.tips'
+  },
+  {
+    title: {
       text: 'models.accessSettings.public',
       locale: true
     },
@@ -66,6 +90,233 @@ const Label = styled.div`
   font-size: 14px;
   color: var(--ant-color-text-tertiary);
 `;
+
+const principalTagColor = (type: AccessPrincipalType) => {
+  if (type === 'org') return 'blue';
+  if (type === 'group') return 'purple';
+  return 'green';
+};
+
+const PrincipalsField: React.FC<{
+  form: any;
+  onChange?: (next: AccessPrincipal[]) => void;
+}> = ({ form, onChange }) => {
+  const intl = useIntl();
+  const value: AccessPrincipal[] = Form.useWatch('principals', form) || [];
+
+  const [orgs, setOrgs] = useState<{ id: number; name: string }[]>([]);
+  const [users, setUsers] = useState<{ id: number; username: string }[]>([]);
+  const [groups, setGroups] = useState<
+    { id: number; name: string; organization_id: number }[]
+  >([]);
+  const [type, setType] = useState<AccessPrincipalType>('user');
+  const [orgForGroup, setOrgForGroup] = useState<number | undefined>();
+  const [pendingId, setPendingId] = useState<number | undefined>();
+
+  useEffect(() => {
+    queryOrganizationsList({ page: -1 }).then((res: any) =>
+      setOrgs((res?.items || res || []) as any)
+    );
+    queryUsersList({ page: -1 }).then((res: any) =>
+      setUsers((res?.items || res || []) as any)
+    );
+  }, []);
+
+  useEffect(() => {
+    if (type === 'group' && orgForGroup) {
+      queryUserGroups(orgForGroup, { page: -1 }).then((res: any) => {
+        const items: any[] = Array.isArray(res) ? res : res?.items || [];
+        setGroups(
+          items.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            organization_id: g.organization_id
+          }))
+        );
+      });
+    } else {
+      setGroups([]);
+    }
+  }, [type, orgForGroup]);
+
+  const updateValue = (next: AccessPrincipal[]) => {
+    form.setFieldsValue({ principals: next });
+    onChange?.(next);
+  };
+
+  const lookupName = (p: AccessPrincipal): string | undefined => {
+    if (p.principal_name) return p.principal_name;
+    if (p.principal_type === 'org') {
+      return orgs.find((o) => o.id === p.principal_id)?.name;
+    }
+    if (p.principal_type === 'user') {
+      return users.find((u) => u.id === p.principal_id)?.username;
+    }
+    if (p.principal_type === 'group') {
+      return groups.find((g) => g.id === p.principal_id)?.name;
+    }
+    return undefined;
+  };
+
+  const handleAdd = () => {
+    if (pendingId == null) return;
+    if (
+      value.some(
+        (p) => p.principal_type === type && p.principal_id === pendingId
+      )
+    ) {
+      return;
+    }
+    const principal_name =
+      type === 'org'
+        ? orgs.find((o) => o.id === pendingId)?.name
+        : type === 'user'
+          ? users.find((u) => u.id === pendingId)?.username
+          : groups.find((g) => g.id === pendingId)?.name;
+    updateValue([
+      ...value,
+      {
+        principal_type: type,
+        principal_id: pendingId,
+        principal_name,
+        organization_id: type === 'group' ? orgForGroup : undefined
+      }
+    ]);
+    setPendingId(undefined);
+  };
+
+  const handleRemove = (p: AccessPrincipal) => {
+    updateValue(
+      value.filter(
+        (item) =>
+          !(
+            item.principal_type === p.principal_type &&
+            item.principal_id === p.principal_id
+          )
+      )
+    );
+  };
+
+  const idOptions =
+    type === 'org'
+      ? orgs.map((o) => ({ value: o.id, label: o.name }))
+      : type === 'user'
+        ? users.map((u) => ({ value: u.id, label: u.username }))
+        : groups.map((g) => ({ value: g.id, label: g.name }));
+
+  const columns = [
+    {
+      title: intl.formatMessage({ id: 'organizations.access.principalType' }),
+      dataIndex: 'principal_type',
+      width: 140,
+      render: (t: AccessPrincipalType) => (
+        <Tag color={principalTagColor(t)}>
+          {intl.formatMessage({ id: `organizations.principal.${t}` })}
+        </Tag>
+      )
+    },
+    {
+      title: intl.formatMessage({ id: 'organizations.access.principal' }),
+      dataIndex: 'principal_id',
+      render: (_t: any, record: AccessPrincipal) =>
+        lookupName(record) || `#${record.principal_id}`
+    },
+    {
+      title: '',
+      key: 'op',
+      width: 60,
+      render: (_t: any, record: AccessPrincipal) => (
+        <Button
+          type="text"
+          danger
+          size="small"
+          icon={<CloseOutlined />}
+          onClick={() => handleRemove(record)}
+        />
+      )
+    }
+  ];
+
+  return (
+    <>
+      <Label>
+        {intl.formatMessage({ id: 'models.accessSettings.principals' })}
+      </Label>
+      <Space.Compact style={{ width: '100%', marginBottom: 12 }}>
+        <Select
+          value={type}
+          style={{ width: 140 }}
+          onChange={(v) => {
+            setType(v);
+            setPendingId(undefined);
+            setOrgForGroup(undefined);
+          }}
+          options={[
+            {
+              value: 'org',
+              label: intl.formatMessage({ id: 'organizations.principal.org' })
+            },
+            {
+              value: 'group',
+              label: intl.formatMessage({
+                id: 'organizations.principal.group'
+              })
+            },
+            {
+              value: 'user',
+              label: intl.formatMessage({
+                id: 'organizations.principal.user'
+              })
+            }
+          ]}
+        />
+        {type === 'group' && (
+          <Select
+            placeholder={intl.formatMessage({
+              id: 'organizations.groups.selectOrg'
+            })}
+            value={orgForGroup}
+            onChange={(v) => {
+              setOrgForGroup(v);
+              setPendingId(undefined);
+            }}
+            style={{ width: 200 }}
+            options={orgs.map((o) => ({ value: o.id, label: o.name }))}
+          />
+        )}
+        <Select
+          showSearch
+          optionFilterProp="label"
+          placeholder={intl.formatMessage({
+            id: 'organizations.access.principal'
+          })}
+          value={pendingId}
+          onChange={setPendingId}
+          options={idOptions}
+          style={{ flex: 1 }}
+        />
+        <Button type="primary" onClick={handleAdd} disabled={pendingId == null}>
+          {intl.formatMessage({ id: 'common.button.add' })}
+        </Button>
+      </Space.Compact>
+      <Form.Item name="principals" hidden noStyle>
+        <span />
+      </Form.Item>
+      <Table
+        rowKey={(record) => `${record.principal_type}:${record.principal_id}`}
+        dataSource={value}
+        columns={columns as any}
+        pagination={false}
+        size="small"
+        locale={{
+          emptyText: intl.formatMessage({
+            id: 'organizations.access.empty'
+          })
+        }}
+      />
+    </>
+  );
+};
 
 interface AccessControlFormProps {
   action: PageActionType;
@@ -167,10 +418,15 @@ const AccessControlForm = forwardRef((props: AccessControlFormProps, ref) => {
     const policy = e.target.value;
     if (policy === 'allowed_users') {
       form.setFieldsValue({ users: formDataCacheRef.current?.users || [] });
+    } else if (policy === 'allowed_principals') {
+      form.setFieldsValue({
+        principals: formDataCacheRef.current?.principals || []
+      });
     } else {
       formDataCacheRef.current = {
         access_policy: policy,
-        users: form.getFieldValue('users') || []
+        users: form.getFieldValue('users') || [],
+        principals: form.getFieldValue('principals') || []
       };
     }
     await new Promise((resolve) => {
@@ -291,6 +547,7 @@ const AccessControlForm = forwardRef((props: AccessControlFormProps, ref) => {
       scrollToFirstError={true}
       initialValues={{
         users: [],
+        principals: [],
         access_policy: action === PageAction.CREATE ? 'authed' : undefined
       }}
     >
@@ -318,6 +575,12 @@ const AccessControlForm = forwardRef((props: AccessControlFormProps, ref) => {
             },
             {
               label: intl.formatMessage({
+                id: 'models.accessSettings.allowedPrincipals'
+              }),
+              value: 'allowed_principals'
+            },
+            {
+              label: intl.formatMessage({
                 id: 'models.accessSettings.public'
               }),
               value: 'public'
@@ -325,6 +588,14 @@ const AccessControlForm = forwardRef((props: AccessControlFormProps, ref) => {
           ]}
         ></Radio.Group>
       </Form.Item>
+      {accessPolicy === 'allowed_principals' && (
+        <PrincipalsField
+          form={form}
+          onChange={(principals) => {
+            onValuesChange?.({ principals }, form.getFieldsValue());
+          }}
+        />
+      )}
       {accessPolicy === 'public' && (
         <div style={{ marginBlock: '16px 12px' }}>
           <AlertBlockInfo

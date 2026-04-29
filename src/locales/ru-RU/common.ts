@@ -39,6 +39,7 @@ export default {
   'common.button.add.now': 'Добавить сейчас',
   'common.button.refresh': 'Обновить',
   'common.button.delete': 'Удалить',
+  'common.button.remove': 'Убрать',
   'common.button.create': 'Создать',
   'common.button.clone': 'Клонировать',
   'common.button.rollback': 'Откатить',

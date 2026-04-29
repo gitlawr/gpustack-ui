@@ -10,10 +10,20 @@ export async function queryApisKeysList(params: Global.SearchParams) {
   });
 }
 
-export async function createApisKey(params: { data: FormData }) {
+export async function createApisKey(params: {
+  data: FormData;
+  organizationId?: number | null;
+}) {
   return request<ListItem>(`${APIS_KEYS_API}`, {
     method: 'POST',
-    data: params.data
+    data: params.data,
+    // For platform admin in "Platform-wide" mode, the form picks an
+    // explicit target org and we forward it as the per-request override.
+    ...(params.organizationId != null
+      ? {
+          headers: { 'X-Organization-Id': String(params.organizationId) }
+        }
+      : {})
   });
 }
 

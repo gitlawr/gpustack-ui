@@ -39,6 +39,7 @@ export default {
   'common.button.add.now': '今すぐ追加',
   'common.button.refresh': '更新',
   'common.button.delete': '削除',
+  'common.button.remove': '削除',
   'common.button.create': '作成',
   'common.button.clone': '複製',
   'common.button.rollback': 'ロールバック',

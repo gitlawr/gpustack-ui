@@ -203,6 +203,10 @@ export default {
   'models.accessSettings.public': 'Herkese Açık',
   'models.accessSettings.authed': 'Kimlik Doğrulamalı',
   'models.accessSettings.allowedUsers': 'İzin verilen kullanıcılar',
+  'models.accessSettings.allowedPrincipals': 'İzin verilen ilkeler',
+  'models.accessSettings.allowedPrincipals.tips':
+    'Belirli organizasyonlara, kullanıcı gruplarına veya kullanıcılara yayınla.',
+  'models.accessSettings.principals': 'İlkeler',
   'models.accessSettings.public.tips':
     'Herkese açık olarak ayarlandığında, herkes kimlik doğrulaması olmadan bu modele erişebilir, bu da veri ifşa risklerine yol açabilir.',
   'models.table.button.deploy': 'Şimdi Dağıt',

@@ -21,4 +21,7 @@ export interface FormData {
   expires_in: number | null;
   custom?: string;
   scope?: string[];
+  // Only used by the admin Platform-wide flow to pick the org the new key
+  // gets bound to; stripped from the request body before POST.
+  target_organization_id?: number;
 }

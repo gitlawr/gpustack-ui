@@ -204,6 +204,10 @@ export default {
   'models.accessSettings.public': 'Public',
   'models.accessSettings.authed': 'Authenticated',
   'models.accessSettings.allowedUsers': 'Allowed users',
+  'models.accessSettings.allowedPrincipals': 'Allowed principals',
+  'models.accessSettings.allowedPrincipals.tips':
+    'Publish to specific organizations, user groups, or users.',
+  'models.accessSettings.principals': 'Principals',
   'models.accessSettings.public.tips':
     'When set to public, anyone can access this model without authentication, which may lead to data exposure risks.',
   'models.table.button.deploy': 'Deploy Now',

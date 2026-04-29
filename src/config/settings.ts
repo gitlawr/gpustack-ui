@@ -43,5 +43,9 @@ export const PaginationKey = {
   Users: 'Users',
   APIKeys: 'APIKeys',
   Credentials: 'Credentials',
-  Instances: 'Instances'
+  Instances: 'Instances',
+  Organizations: 'Organizations',
+  OrganizationMembers: 'OrganizationMembers',
+  UserGroups: 'UserGroups',
+  UserGroupMembers: 'UserGroupMembers'
 };

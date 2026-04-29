@@ -39,6 +39,7 @@ export default {
   'common.button.view': '查看明细',
   'common.button.detail': '详情',
   'common.button.delete': '删除',
+  'common.button.remove': '移除',
   'common.button.create': '新建',
   'common.button.clone': '克隆',
   'common.button.rollback': '回滚',

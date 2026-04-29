@@ -8,6 +8,25 @@ import ErrorMessageContent from './pages/_components/error-message-content';
 //  these APIs do not via the GPUSTACK_API_BASE_URL
 const NoBaseURLAPIs = ['/auth', '/v1', '/version', '/proxy', '/update'];
 
+const ORGANIZATION_ID_KEY = 'currentOrganizationId';
+
+const readCurrentOrgId = (): string | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const raw = window.localStorage.getItem(ORGANIZATION_ID_KEY);
+    if (!raw || raw === 'null') {
+      return null;
+    }
+    // jotai stores numbers as JSON-encoded values
+    const parsed = JSON.parse(raw);
+    return parsed != null ? String(parsed) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const requestConfig: RequestConfig = {
   headers: {
     'Content-Security-Policy': "frame-ancestors 'self'",
@@ -38,6 +57,15 @@ export const requestConfig: RequestConfig = {
   },
   requestInterceptors: [
     (url, options) => {
+      // Attach the active organization context to every API request.
+      // Server ignores this header for API-key-authenticated calls.
+      const orgId = readCurrentOrgId();
+      if (orgId) {
+        options.headers = {
+          ...(options.headers || {}),
+          'X-Organization-Id': orgId
+        };
+      }
       if (NoBaseURLAPIs.some((api) => url.startsWith(api))) {
         options.baseURL = '';
         return { url, options };

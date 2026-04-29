@@ -34,6 +34,8 @@ export default {
   'menu.accessControl': 'Access Control',
   'menu.accessControl.apikeys': 'API Keys',
   'menu.accessControl.users': 'Users',
+  'menu.accessControl.organizations': 'Organizations',
+  'menu.accessControl.userGroups': 'User Groups',
   'menu.clusterManagement': 'Cluster Management',
   'menu.clusterManagement.clusters': 'Clusters',
   'menu.clusterManagement.credentials': 'Cloud Credentials',

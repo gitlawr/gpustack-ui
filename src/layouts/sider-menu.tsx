@@ -1,9 +1,23 @@
+import * as AntdIcons from '@ant-design/icons';
 import { CaretDownOutlined } from '@ant-design/icons';
 import { IconFont } from '@gpustack/core-ui';
 import { Link, useLocation } from '@umijs/max';
 import { Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useMemo, useState } from 'react';
+
+// A menu icon string can be either a custom alicdn iconfont type
+// ("icon-foo") or, when prefixed with "antd:", a name from
+// @ant-design/icons (e.g. "antd:ApartmentOutlined"). The latter unlocks
+// hundreds of icons without round-tripping through the iconfont console.
+const renderMenuIcon = (type: string | undefined) => {
+  if (!type) return null;
+  if (type.startsWith('antd:')) {
+    const Comp = (AntdIcons as any)[type.slice('antd:'.length)];
+    return Comp ? <Comp /> : null;
+  }
+  return <IconFont type={type} />;
+};
 
 interface MenuItem {
   icon?: string;
@@ -183,32 +197,25 @@ const SiderMenu: React.FC<SiderMenuProps> = (props) => {
               menuItem.subMenu?.includes(location.pathname)
           })}
         >
-          {collapsed ? (
-            <Tooltip title={menuItem.name} placement="right">
-              <span className="icon-wrapper">
-                <IconFont
-                  type={
-                    location.pathname === menuItem.path ||
-                    menuItem.subMenu?.includes(location.pathname)
-                      ? menuItem.selectedIcon || ''
-                      : menuItem.defaultIcon || ''
-                  }
-                ></IconFont>
-              </span>
-            </Tooltip>
-          ) : (
-            <>
-              <IconFont
-                type={
-                  location.pathname === menuItem.path ||
-                  menuItem.subMenu?.includes(location.pathname)
-                    ? menuItem.selectedIcon || ''
-                    : menuItem.defaultIcon || ''
-                }
-              ></IconFont>
-              <span>{menuItem.name}</span>
-            </>
-          )}
+          {(() => {
+            const isActive =
+              location.pathname === menuItem.path ||
+              menuItem.subMenu?.includes(location.pathname);
+            const iconType = isActive
+              ? menuItem.selectedIcon
+              : menuItem.defaultIcon;
+            const iconNode = renderMenuIcon(iconType);
+            return collapsed ? (
+              <Tooltip title={menuItem.name} placement="right">
+                <span className="icon-wrapper">{iconNode}</span>
+              </Tooltip>
+            ) : (
+              <>
+                {iconNode}
+                <span>{menuItem.name}</span>
+              </>
+            );
+          })()}
         </Link>
       </div>
     );

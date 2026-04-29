@@ -25,7 +25,7 @@ export interface ListItem {
   local_path?: string;
   created_at: string;
   updated_at: string;
-  access_policy: 'public' | 'authed' | 'allowed_users';
+  access_policy: 'public' | 'authed' | 'allowed_users' | 'allowed_principals';
   generic_proxy?: boolean;
   gpu_selector?: {
     gpu_ids: string[];
@@ -344,9 +344,20 @@ export interface BackendOption {
   }[];
 }
 
+export type AccessPrincipalType = 'org' | 'group' | 'user';
+
+export interface AccessPrincipal {
+  principal_type: AccessPrincipalType;
+  principal_id: number;
+  // Optional, only for client-side rendering convenience.
+  principal_name?: string;
+  organization_id?: number;
+}
+
 export interface AccessControlFormData {
-  access_policy: 'public' | 'authed' | 'allowed_users';
+  access_policy: 'public' | 'authed' | 'allowed_users' | 'allowed_principals';
   users: { id: number }[];
+  principals?: AccessPrincipal[];
 }
 
 export interface BackendItem {

@@ -1,3 +1,7 @@
+import {
+  currentOrganizationIdAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { userSettingsHelperAtom } from '@/atoms/settings';
 import { GPUStackVersionAtom, UpdateCheckAtom } from '@/atoms/user';
 import { setAtomStorage } from '@/atoms/utils';
@@ -7,6 +11,7 @@ import { enterprisePluginReady } from '@/plugins/enterprise-ready';
 import { GPUStackPluginManager } from '@/plugins/manager';
 import { mergeEnterpriseRoutes } from '@/plugins/route-merger';
 import { requestConfig } from '@/request-config';
+import { queryMyOrganizations } from '@/services/organizations/apis';
 import {
   queryCurrentUserState,
   queryVersionInfo,
@@ -73,6 +78,59 @@ export async function getInitialState(): Promise<{
     }
   };
 
+  // Read the persisted currentOrganizationId straight from localStorage.
+  // jotai's atomWithStorage is lazy — `store.get(atom)` before any
+  // component has subscribed can return the default (null) instead of
+  // the stored value, which would silently reset admin's selection on
+  // every reload.
+  const readPersistedOrgId = (): number | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem('currentOrganizationId');
+      if (!raw || raw === 'null') return null;
+      const parsed = JSON.parse(raw);
+      return typeof parsed === 'number' ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const fetchOrganizations = async (userInfo: Global.UserInfo) => {
+    try {
+      const res = await queryMyOrganizations({ skipErrorHandler: true });
+      // Server returns [{ organization, role }, ...] — flatten for UI consumption.
+      const raw = Array.isArray(res) ? res : (res as any)?.items || [];
+      const list = raw.map((entry: any) => ({
+        ...(entry.organization || entry),
+        role: entry.role
+      }));
+      setAtomStorage(organizationListAtom, list);
+
+      const currentId = readPersistedOrgId();
+      const stillValid =
+        currentId != null && list.some((item: any) => item.id === currentId);
+
+      if (!stillValid) {
+        // Platform admin defaults to "All" (no org context) so their list
+        // endpoints return cross-org results. Non-admin users must always
+        // operate inside an org, so we pick a sensible default.
+        const fallback = userInfo?.is_admin
+          ? null
+          : (userInfo as any)?.default_organization_id ||
+            list.find((item: any) => item.is_platform)?.id ||
+            list[0]?.id ||
+            null;
+        setAtomStorage(currentOrganizationIdAtom, fallback);
+      } else {
+        // Make sure jotai's atom stays in sync with the persisted value
+        // (covers the case where the atom hadn't been mounted yet).
+        setAtomStorage(currentOrganizationIdAtom, currentId);
+      }
+    } catch (error) {
+      console.error('queryMyOrganizations error', error);
+    }
+  };
+
   const fetchUserInfo = async (config?: {
     skipErrorHandler?: boolean;
   }): Promise<Global.UserInfo> => {
@@ -84,6 +142,7 @@ export async function getInitialState(): Promise<{
         getUpdateCheck();
         fetchSystemConfig();
       }
+      await fetchOrganizations(data);
       return data;
     } catch (error: any) {
       const data = error?.response?.data;

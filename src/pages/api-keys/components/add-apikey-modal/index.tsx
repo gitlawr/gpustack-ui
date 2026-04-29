@@ -93,11 +93,15 @@ const AddModal: React.FC<AddModalProps> = ({
   };
 
   const createAPIKey = async (data: FormData) => {
+    const { target_organization_id, ...rest } = data as any;
     const params = {
-      ...data,
+      ...rest,
       expires_in: getExpireValue(data.expires_in)
     };
-    const res = await createApisKey({ data: params });
+    const res = await createApisKey({
+      data: params,
+      organizationId: target_organization_id
+    });
 
     // if custom value
     if (data.custom) {

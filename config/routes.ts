@@ -251,16 +251,16 @@ export default [
           '/cluster-management/clusters/create'
         ]
       },
-      // {
-      //   name: 'clusterDetail',
-      //   path: '/cluster-management/clusters/detail',
-      //   key: 'clusterDetail',
-      //   icon: 'icon-cluster2-outline',
-      //   selectedIcon: 'icon-cluster2-filled',
-      //   defaultIcon: 'icon-cluster2-outline',
-      //   hideInMenu: true,
-      //   component: './cluster-management/cluster-detail'
-      // },
+      {
+        name: 'clusterDetail',
+        path: '/cluster-management/clusters/detail',
+        key: 'clusterDetail',
+        icon: 'icon-cluster2-outline',
+        selectedIcon: 'icon-cluster2-filled',
+        defaultIcon: 'icon-cluster2-outline',
+        hideInMenu: true,
+        component: './cluster-management/cluster-detail'
+      },
       {
         name: 'credentials',
         path: '/cluster-management/credentials',
@@ -282,14 +282,33 @@ export default [
         redirect: '/access-control/users'
       },
       {
+        name: 'organizations',
+        path: '/access-control/organizations',
+        key: 'organizations',
+        icon: 'antd:ApartmentOutlined',
+        selectedIcon: 'antd:ApartmentOutlined',
+        defaultIcon: 'antd:ApartmentOutlined',
+        access: 'canSeeAdmin',
+        component: './organizations'
+      },
+      {
         name: 'users',
         path: '/access-control/users',
         key: 'users',
+        icon: 'icon-user',
+        selectedIcon: 'icon-user-filled',
+        defaultIcon: 'icon-user',
+        access: 'canSeeAdmin',
+        component: './users'
+      },
+      {
+        name: 'userGroups',
+        path: '/access-control/user-groups',
+        key: 'userGroups',
         icon: 'icon-users',
         selectedIcon: 'icon-users-filled',
         defaultIcon: 'icon-users',
-        access: 'canSeeAdmin',
-        component: './users'
+        component: './user-groups'
       },
       {
         name: 'apikeys',
