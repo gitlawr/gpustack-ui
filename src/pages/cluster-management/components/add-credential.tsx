@@ -1,9 +1,21 @@
+import {
+  currentOrganizationAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
-import { Input as CInput, FormDrawer, useAppUtils } from '@gpustack/core-ui';
+import { queryOrganizationsList } from '@/services/organizations/apis';
+import { useModel } from '@@/plugin-model';
+import {
+  Input as CInput,
+  FormDrawer,
+  Select as SealSelect,
+  useAppUtils
+} from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Form } from 'antd';
-import React, { useEffect } from 'react';
+import { useAtomValue } from 'jotai';
+import React, { useEffect, useState } from 'react';
 import { ProviderType, ProviderValueMap } from '../config';
 import {
   CredentialFormData as FormData,
@@ -31,6 +43,29 @@ const AddModal: React.FC<AddModalProps> = ({
   const [form] = Form.useForm();
   const intl = useIntl();
   const { getRuleMessage } = useAppUtils();
+  const currentOrg = useAtomValue(currentOrganizationAtom);
+  const memberOrgList = useAtomValue(organizationListAtom);
+  const { initialState } = useModel('@@initialState') || {};
+  const isAdmin = !!initialState?.currentUser?.is_admin;
+  const [adminOrgList, setAdminOrgList] = useState<
+    { id: number; name: string }[]
+  >([]);
+  useEffect(() => {
+    if (!isAdmin || action !== PageAction.CREATE || !open) return;
+    queryOrganizationsList({ page: -1 }).then((res: any) => {
+      const items = res?.items || res || [];
+      setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
+    });
+  }, [isAdmin, action, open]);
+  const orgOptions = isAdmin
+    ? [
+        {
+          value: null as number | null,
+          label: intl.formatMessage({ id: 'clusters.form.owner.platform' })
+        },
+        ...adminOrgList.map((o) => ({ value: o.id, label: o.name }))
+      ]
+    : memberOrgList.map((o) => ({ value: o.id, label: o.name }));
 
   const handleSumit = () => {
     form.submit();
@@ -77,6 +112,19 @@ const AddModal: React.FC<AddModalProps> = ({
             required
           ></CInput.Input>
         </Form.Item>
+        {action === PageAction.CREATE && (
+          <Form.Item<FormData>
+            name="organization_id"
+            initialValue={isAdmin ? null : currentOrg?.id}
+            rules={[{ required: false }]}
+          >
+            <SealSelect
+              label={intl.formatMessage({ id: 'clusters.form.owner' })}
+              options={orgOptions as any}
+              disabled={!isAdmin && memberOrgList.length <= 1}
+            ></SealSelect>
+          </Form.Item>
+        )}
         {provider === ProviderValueMap.DigitalOcean && (
           <>
             <Form.Item<FormData>

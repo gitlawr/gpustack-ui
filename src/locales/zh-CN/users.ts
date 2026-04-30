@@ -38,5 +38,10 @@ export default {
   'users.status.deactivate': '停用账户',
   'users.status.inactiveAccount': '停用账户',
   'users.login.getInitialPassword':
-    '在 GPUStack Server 节点运行以下命令以获取初始管理员密码。'
+    '在 GPUStack Server 节点运行以下命令以获取初始管理员密码。',
+  'users.memberships.title': '组织成员关系',
+  'users.memberships.add': '加入组织',
+  'users.memberships.count': '{count} 个组织',
+  'users.memberships.selectOrgs': '选择组织',
+  'users.memberships.add.partial': '已添加，但 {total} 个中有 {failed} 个失败。'
 };

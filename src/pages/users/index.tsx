@@ -17,6 +17,7 @@ import {
   updateUserStatus
 } from './apis';
 import AddModal from './components/add-modal';
+import MembershipsDrawer from './components/memberships-drawer';
 import { FormData, ListItem } from './config/types';
 import useUsersColumns from './hooks/use-users-columns';
 
@@ -54,6 +55,10 @@ const Users: React.FC = () => {
     open: false,
     currentData: null
   });
+  const [membershipsState, setMembershipsState] = useState<{
+    open: boolean;
+    user: ListItem | null;
+  }>({ open: false, user: null });
 
   const handleAddUser = () => {
     setOpenAddModalStatus({
@@ -129,6 +134,8 @@ const Users: React.FC = () => {
   const handleSelect = useMemoizedFn((val: any, row: ListItem) => {
     if (val === 'edit') {
       handleEditUser(row);
+    } else if (val === 'memberships') {
+      setMembershipsState({ open: true, user: row });
     } else if (val === 'delete') {
       handleDelete({ ...row, name: row.username });
     } else if (val === 'active' || val === 'inactive') {
@@ -215,6 +222,11 @@ const Users: React.FC = () => {
         onCancel={handleModalCancel}
         onOk={handleModalOk}
       ></AddModal>
+      <MembershipsDrawer
+        open={membershipsState.open}
+        user={membershipsState.user}
+        onClose={() => setMembershipsState({ open: false, user: null })}
+      />
       <DeleteModal ref={modalRef}></DeleteModal>
     </>
   );

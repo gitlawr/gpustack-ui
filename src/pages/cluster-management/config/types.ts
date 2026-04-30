@@ -7,6 +7,7 @@ export interface CredentialFormData {
   secret: string;
   description?: string;
   id?: number;
+  organization_id?: number | null;
 }
 
 export type ClusterStatusType = 'provisioning' | 'provisioned' | 'ready';
@@ -102,6 +103,8 @@ export interface ClusterFormData {
   worker_config?: Record<string, any>;
   worker_pools?: NodePoolFormData[];
   k8s_volume_mounts?: VolumeMount[];
+  // null = platform-shared (admin only); non-null = owned by that Org.
+  organization_id?: number | null;
 }
 
 export interface SystemConfig {

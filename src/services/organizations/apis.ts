@@ -6,7 +6,7 @@ export const ME_ORGANIZATIONS_API = '/users/me/organizations';
 
 export interface MyOrganization {
   organization: Organization;
-  role: 'owner' | 'admin' | 'member';
+  role: 'owner' | 'manager' | 'member';
 }
 
 export interface OrganizationFormData {
@@ -18,7 +18,7 @@ export interface OrganizationFormData {
 export interface OrganizationMember {
   user_id: number;
   organization_id: number;
-  role: 'owner' | 'admin' | 'member';
+  role: 'owner' | 'manager' | 'member';
   username?: string;
   full_name?: string;
   email?: string;

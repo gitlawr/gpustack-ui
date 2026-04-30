@@ -119,6 +119,8 @@ export default {
     'Specify an externally accessible GPUStack service URL if the worker cannot access GPUStack Server directly.',
   'clusters.form.setDefault': 'Set as Default',
   'clusters.form.setDefault.tips': 'Default for deployment.',
+  'clusters.form.owner': 'Owner',
+  'clusters.form.owner.platform': 'Platform-shared',
   'clusters.addworker.noClusters': 'No available Docker clusters found',
   'clusters.create.steps.complete.tips': 'Cluster created successfully!',
   'clusters.create.steps.complete': 'Complete',

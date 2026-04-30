@@ -1,13 +1,13 @@
-import { queryUsersList } from '@/pages/users/apis';
-import { ListItem as UserItem } from '@/pages/users/config/types';
+import { Organization } from '@/atoms/organization';
+import { OrganizationRoleOptions } from '@/pages/organizations/config/types';
+import { queryUserMemberships, UserMembership } from '@/pages/users/apis';
 import {
   addOrganizationMember,
-  OrganizationMember,
-  queryOrganizationMembers,
+  queryOrganizationsList,
   removeOrganizationMember,
   updateOrganizationMember
 } from '@/services/organizations/apis';
-import { CloseOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
+import { CloseOutlined, PlusOutlined } from '@ant-design/icons';
 import { GSDrawer, IconFont } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
@@ -22,11 +22,11 @@ import {
   Tag
 } from 'antd';
 import { useEffect, useState } from 'react';
-import { OrganizationListItem, OrganizationRoleOptions } from '../config/types';
+import { ListItem as UserItem } from '../config/types';
 
 type Props = {
   open: boolean;
-  organization: OrganizationListItem | null;
+  user: UserItem | null;
   onClose: () => void;
 };
 
@@ -36,118 +36,124 @@ const roleColor = (role: string) => {
   return 'default';
 };
 
-const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
+const MembershipsDrawer: React.FC<Props> = ({ open, user, onClose }) => {
   const intl = useIntl();
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [members, setMembers] = useState<OrganizationMember[]>([]);
-  const [users, setUsers] = useState<UserItem[]>([]);
-  const [form] = Form.useForm<{ user_id: number; role: string }>();
+  const [memberships, setMemberships] = useState<UserMembership[]>([]);
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [form] = Form.useForm<{ org_ids: number[]; role: string }>();
 
-  const fetchMembers = useMemoizedFn(async () => {
-    if (!organization) return;
+  const fetchMemberships = useMemoizedFn(async () => {
+    if (!user) return;
     setLoading(true);
     try {
-      const res = await queryOrganizationMembers(organization.id);
-      const list = Array.isArray(res) ? res : (res as any)?.items || [];
-      setMembers(list);
+      const res = await queryUserMemberships(user.id);
+      setMemberships(Array.isArray(res) ? res : []);
     } finally {
       setLoading(false);
     }
   });
 
-  const fetchUsers = useMemoizedFn(async () => {
+  const fetchOrgs = useMemoizedFn(async () => {
     try {
-      const res = await queryUsersList({ page: -1 });
-      setUsers((res as any)?.items || (res as any) || []);
+      const res = await queryOrganizationsList({ page: -1 } as any);
+      const list: Organization[] = (res as any)?.items || (res as any) || [];
+      // Personal Orgs are intrinsic to a user — admins don't manage them.
+      setOrgs(list.filter((o) => !o.is_personal));
     } catch (_) {
-      setUsers([]);
+      setOrgs([]);
     }
-  });
-
-  // Enrich members with username/full_name resolved from the user list.
-  const enrichedMembers: OrganizationMember[] = members.map((m) => {
-    const user = users.find((u) => u.id === m.user_id);
-    return {
-      ...m,
-      username: m.username ?? user?.username,
-      full_name: m.full_name ?? user?.full_name
-    } as OrganizationMember;
   });
 
   useEffect(() => {
-    if (open && organization) {
-      fetchMembers();
-      fetchUsers();
+    if (open && user) {
+      fetchMemberships();
+      fetchOrgs();
       setAdding(false);
       form.resetFields();
     }
-  }, [open, organization, fetchMembers, fetchUsers, form]);
+  }, [open, user, fetchMemberships, fetchOrgs, form]);
+
+  const memberOrgIds = new Set(memberships.map((m) => m.organization.id));
+  const candidateOrgs = orgs.filter((o) => !memberOrgIds.has(o.id));
 
   const handleAdd = async () => {
-    if (!organization) return;
+    if (!user) return;
     try {
       const values = await form.validateFields();
-      await addOrganizationMember({
-        orgId: organization.id,
-        data: { user_id: values.user_id, role: values.role as any }
-      });
-      message.success(intl.formatMessage({ id: 'common.message.success' }));
+      // Bulk-add: fan out to per-org endpoints. Surface failures per row
+      // rather than rolling back, since partial success is still useful.
+      const results = await Promise.allSettled(
+        values.org_ids.map((orgId) =>
+          addOrganizationMember({
+            orgId,
+            data: { user_id: user.id, role: values.role as any }
+          })
+        )
+      );
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed === 0) {
+        message.success(intl.formatMessage({ id: 'common.message.success' }));
+      } else if (failed < results.length) {
+        message.warning(
+          intl.formatMessage(
+            { id: 'users.memberships.add.partial' },
+            { failed, total: results.length }
+          )
+        );
+      } else {
+        message.error(intl.formatMessage({ id: 'common.message.fail' }));
+      }
       setAdding(false);
       form.resetFields();
-      fetchMembers();
+      fetchMemberships();
     } catch (_) {
-      // validation handled by antd
+      // validation error handled by antd
     }
   };
 
-  const handleRoleChange = async (record: OrganizationMember, role: string) => {
-    if (!organization) return;
+  const handleRoleChange = async (record: UserMembership, role: string) => {
+    if (!user) return;
     try {
       await updateOrganizationMember({
-        orgId: organization.id,
-        userId: record.user_id,
+        orgId: record.organization.id,
+        userId: user.id,
         data: { role: role as any }
       });
       message.success(intl.formatMessage({ id: 'common.message.success' }));
-      fetchMembers();
+      fetchMemberships();
     } catch (_) {
       // ignore
     }
   };
 
-  const handleRemove = async (record: OrganizationMember) => {
-    if (!organization) return;
+  const handleRemove = async (record: UserMembership) => {
+    if (!user) return;
     try {
       await removeOrganizationMember({
-        orgId: organization.id,
-        userId: record.user_id
+        orgId: record.organization.id,
+        userId: user.id
       });
       message.success(intl.formatMessage({ id: 'common.message.success' }));
-      fetchMembers();
+      fetchMemberships();
     } catch (_) {
       // ignore
     }
   };
-
-  const memberUserIds = new Set(members.map((m) => m.user_id));
-  const candidateUsers = users.filter(
-    (u) => !memberUserIds.has(u.id) && u.is_active
-  );
 
   const columns = [
     {
-      title: intl.formatMessage({ id: 'common.table.name' }),
-      dataIndex: 'username',
-      key: 'username',
-      render: (_: any, record: OrganizationMember) => (
+      title: intl.formatMessage({ id: 'organizations.title.org' }),
+      dataIndex: ['organization', 'name'],
+      key: 'name',
+      render: (_: any, record: UserMembership) => (
         <Space>
-          <UserOutlined />
-          <span>{record.username || record.user_id}</span>
-          {record.full_name && (
-            <span style={{ color: 'var(--ant-color-text-tertiary)' }}>
-              ({record.full_name})
-            </span>
+          <span>{record.organization.name}</span>
+          {record.organization.is_platform && (
+            <Tag color="default">
+              {intl.formatMessage({ id: 'organizations.tag.platform' })}
+            </Tag>
           )}
         </Space>
       )
@@ -157,7 +163,7 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
       dataIndex: 'role',
       key: 'role',
       width: 200,
-      render: (_: any, record: OrganizationMember) => (
+      render: (_: any, record: UserMembership) => (
         <Select
           value={record.role}
           style={{ width: 140 }}
@@ -174,7 +180,7 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
       title: intl.formatMessage({ id: 'common.table.operation' }),
       key: 'op',
       width: 100,
-      render: (_: any, record: OrganizationMember) => (
+      render: (_: any, record: UserMembership) => (
         <Popconfirm
           title={intl.formatMessage({
             id: 'organizations.member.remove.confirm'
@@ -195,10 +201,8 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
     <GSDrawer
       title={
         <span>
-          {intl.formatMessage({ id: 'organizations.members.title' })}
-          {organization && (
-            <Tag style={{ marginLeft: 8 }}>{organization.name}</Tag>
-          )}
+          {intl.formatMessage({ id: 'users.memberships.title' })}
+          {user && <Tag style={{ marginLeft: 8 }}>{user.username}</Tag>}
         </span>
       }
       open={open}
@@ -215,10 +219,10 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
             marginBottom: 16
           }}
         >
-          <Tag color="blue">
+          <Tag color={roleColor('member')}>
             {intl.formatMessage(
-              { id: 'organizations.members.count' },
-              { count: members.length }
+              { id: 'users.memberships.count' },
+              { count: memberships.length }
             )}
           </Tag>
           {!adding && (
@@ -226,9 +230,9 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setAdding(true)}
-              disabled={candidateUsers.length === 0}
+              disabled={candidateOrgs.length === 0}
             >
-              {intl.formatMessage({ id: 'organizations.members.add' })}
+              {intl.formatMessage({ id: 'users.memberships.add' })}
             </Button>
           )}
         </div>
@@ -245,20 +249,22 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
             }}
           >
             <Form.Item
-              name="user_id"
+              name="org_ids"
               rules={[{ required: true }]}
               style={{ flex: 1, marginRight: 8 }}
             >
               <Select
+                mode="multiple"
+                allowClear
                 showSearch
                 placeholder={intl.formatMessage({
-                  id: 'organizations.members.selectUser'
+                  id: 'users.memberships.selectOrgs'
                 })}
-                style={{ width: 240 }}
+                style={{ minWidth: 280 }}
                 optionFilterProp="label"
-                options={candidateUsers.map((u) => ({
-                  value: u.id,
-                  label: `${u.username}${u.full_name ? ' / ' + u.full_name : ''}`
+                options={candidateOrgs.map((o) => ({
+                  value: o.id,
+                  label: o.name
                 }))}
               />
             </Form.Item>
@@ -293,8 +299,8 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
           </Form>
         )}
         <Table
-          rowKey="user_id"
-          dataSource={enrichedMembers}
+          rowKey={(record) => record.organization.id}
+          dataSource={memberships}
           columns={columns as any}
           loading={loading}
           pagination={false}
@@ -305,4 +311,4 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
   );
 };
 
-export default MembersDrawer;
+export default MembershipsDrawer;

@@ -116,10 +116,22 @@ const OrgSwitcher: React.FC = () => {
             </Tag>
           )}
         </span>
-        {item.role && <span className="role">{item.role}</span>}
+        {item.role && !item.is_personal && (
+          <span className="role">{item.role}</span>
+        )}
       </ItemRow>
     )
   }));
+
+  // Sort: Personal first, then Platform/Default, then others — feels
+  // most natural in the dropdown.
+  orgItems.sort((a, b) => {
+    const aItem = list.find((o) => String(o.id) === a.key);
+    const bItem = list.find((o) => String(o.id) === b.key);
+    const aRank = aItem?.is_personal ? 0 : aItem?.is_platform ? 1 : 2;
+    const bRank = bItem?.is_personal ? 0 : bItem?.is_platform ? 1 : 2;
+    return aRank - bRank;
+  });
 
   const menuItems: any[] = [];
 

@@ -39,5 +39,10 @@ export default {
   'users.status.deactivate': 'Deactivate Account',
   'users.status.inactiveAccount': 'Inactive Account',
   'users.login.getInitialPassword':
-    'Run the following command on your GPUStack Server to retrieve the initial admin password.'
+    'Run the following command on your GPUStack Server to retrieve the initial admin password.',
+  'users.memberships.title': 'Organization Memberships',
+  'users.memberships.add': 'Add to Organizations',
+  'users.memberships.count': '{count} membership(s)',
+  'users.memberships.selectOrgs': 'Select organizations',
+  'users.memberships.add.partial': 'Added with {failed} of {total} failures.'
 };

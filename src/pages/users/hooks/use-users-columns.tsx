@@ -1,5 +1,6 @@
 // columns.ts
 import { tableSorter } from '@/config/settings';
+import { ApartmentOutlined } from '@ant-design/icons';
 import {
   AutoTooltip,
   DropdownButtons,
@@ -18,11 +19,16 @@ interface ColumnsHookProps {
   sortOrder: string[];
 }
 
-const actionList: Global.ActionItem[] = [
+const actionList: Global.ActionItem<string>[] = [
   {
     label: 'common.button.edit',
     key: 'edit',
     icon: icons.EditOutlined
+  },
+  {
+    label: 'users.memberships.title',
+    key: 'memberships',
+    icon: <ApartmentOutlined />
   },
   {
     label: 'users.status.activate',

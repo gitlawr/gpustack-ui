@@ -103,7 +103,7 @@ export default [
         icon: 'icon-layers',
         selectedIcon: 'icon-layers-filled',
         defaultIcon: 'icon-layers',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './llmodels/catalog'
       },
       {
@@ -113,7 +113,7 @@ export default [
         icon: 'icon-rocket-launch1',
         selectedIcon: 'icon-rocket-launch-fill',
         defaultIcon: 'icon-rocket-launch1',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './llmodels/index'
       },
       {
@@ -123,7 +123,7 @@ export default [
         icon: 'icon-captive_portal',
         selectedIcon: 'icon-captive_portal',
         defaultIcon: 'icon-captive_portal',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './model-routes/index'
       },
       {
@@ -142,7 +142,7 @@ export default [
         icon: 'icon-extension-outline',
         selectedIcon: 'icon-extension-filled',
         defaultIcon: 'icon-extension-outline',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './maas-provider/index'
       },
 
@@ -163,7 +163,7 @@ export default [
         icon: 'icon-speed',
         selectedIcon: 'icon-speed-filled',
         defaultIcon: 'icon-speed',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './benchmark/index'
       },
       {
@@ -173,7 +173,7 @@ export default [
         icon: 'icon-speed',
         selectedIcon: 'icon-speed-filled',
         defaultIcon: 'icon-speed',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         hideInMenu: true,
         component: './benchmark/details'
       }
@@ -183,7 +183,7 @@ export default [
     name: 'resources',
     path: '/resources',
     key: 'resources',
-    access: 'canSeeAdmin',
+    access: 'canManageInfra',
     routes: [
       {
         path: '/resources',
@@ -232,7 +232,7 @@ export default [
     name: 'clusterManagement',
     path: '/cluster-management',
     key: 'clusterManagement',
-    access: 'canSeeAdmin',
+    access: 'canManageInfra',
     routes: [
       {
         path: '/cluster-management',

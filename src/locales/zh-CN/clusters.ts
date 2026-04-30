@@ -115,6 +115,8 @@ export default {
     '如果节点无法直接访问 GPUStack Server，则指定一个可访问的外部 GPUStack Server 地址。',
   'clusters.form.setDefault': '设为默认',
   'clusters.form.setDefault.tips': '部署时的默认集群。',
+  'clusters.form.owner': '所属',
+  'clusters.form.owner.platform': '平台共享',
   'clusters.addworker.noClusters': '无可用的 Docker 集群',
   'clusters.create.steps.complete.tips': '集群创建成功！',
   'clusters.create.steps.complete': '完成',

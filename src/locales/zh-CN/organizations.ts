@@ -11,7 +11,7 @@ export default {
   'organizations.menu.members': '成员',
   'organizations.menu.groups': '用户组',
   'organizations.role.owner': '所有者',
-  'organizations.role.admin': '管理员',
+  'organizations.role.manager': '管理者',
   'organizations.role.member': '成员',
   'organizations.member.role': '角色',
   'organizations.member.remove.confirm': '确定将该用户从组织中移除吗？',

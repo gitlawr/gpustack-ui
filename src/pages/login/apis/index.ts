@@ -1,3 +1,7 @@
+import {
+  currentOrganizationIdAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { hideModalTemporarilyAtom } from '@/atoms/settings';
 import { systemConfigAtom } from '@/atoms/system';
 import { userAtom } from '@/atoms/user';
@@ -33,6 +37,10 @@ export const logout = async (userInfo?: any) => {
   clearAtomStorage(userAtom);
   clearAtomStorage(hideModalTemporarilyAtom);
   clearAtomStorage(systemConfigAtom);
+  // Reset Org selection so the next user lands on their own default
+  // (otherwise we'd carry the previous user's last-selected Org id).
+  clearAtomStorage(currentOrganizationIdAtom);
+  clearAtomStorage(organizationListAtom);
 
   if (res?.logout_url) {
     window.location.href = res.logout_url;

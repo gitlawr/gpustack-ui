@@ -119,6 +119,8 @@ export default {
     "İşçi düğüm GPUStack Sunucusuna doğrudan erişemiyorsa, harici olarak erişilebilir bir GPUStack hizmet URL'si belirtin.",
   'clusters.form.setDefault': 'Varsayılan Olarak Ayarla',
   'clusters.form.setDefault.tips': 'Dağıtım için varsayılan.',
+  'clusters.form.owner': 'Owner',
+  'clusters.form.owner.platform': 'Platform-shared',
   'clusters.addworker.noClusters': 'Kullanılabilir Docker kümesi bulunamadı',
   'clusters.create.steps.complete.tips': 'Küme başarıyla oluşturuldu!',
   'clusters.create.steps.complete': 'Tamamla',

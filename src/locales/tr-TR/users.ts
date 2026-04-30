@@ -40,5 +40,10 @@ export default {
   'users.status.deactivate': 'Hesabı Devre Dışı Bırak',
   'users.status.inactiveAccount': 'Pasif Hesap',
   'users.login.getInitialPassword':
-    'Başlangıç yönetici şifresini almak için GPUStack Sunucunuzda aşağıdaki komutu çalıştırın.'
+    'Başlangıç yönetici şifresini almak için GPUStack Sunucunuzda aşağıdaki komutu çalıştırın.',
+  'users.memberships.title': 'Organization Memberships',
+  'users.memberships.add': 'Add to Organizations',
+  'users.memberships.count': '{count} membership(s)',
+  'users.memberships.selectOrgs': 'Select organizations',
+  'users.memberships.add.partial': 'Added with {failed} of {total} failures.'
 };

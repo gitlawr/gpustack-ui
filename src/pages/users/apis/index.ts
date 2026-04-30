@@ -1,7 +1,19 @@
+import { Organization } from '@/atoms/organization';
 import { request } from '@umijs/max';
 import { FormData, ListItem } from '../config/types';
 
 export const USERS_API = '/users';
+
+export interface UserMembership {
+  organization: Organization;
+  role: 'owner' | 'manager' | 'member';
+}
+
+export async function queryUserMemberships(userId: number) {
+  return request<UserMembership[]>(`${USERS_API}/${userId}/memberships`, {
+    method: 'GET'
+  });
+}
 
 export async function queryUsersList(params: Global.SearchParams) {
   return request<Global.PageResponse<ListItem>>(`${USERS_API}`, {

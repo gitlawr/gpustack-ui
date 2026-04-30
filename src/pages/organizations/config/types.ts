@@ -12,13 +12,13 @@ export interface OrganizationListItem extends OrganizationFormData {
   updated_at: string;
 }
 
-export type OrganizationRole = 'owner' | 'admin' | 'member';
+export type OrganizationRole = 'owner' | 'manager' | 'member';
 
 export const OrganizationRoleOptions: {
   label: string;
   value: OrganizationRole;
 }[] = [
   { label: 'organizations.role.owner', value: 'owner' },
-  { label: 'organizations.role.admin', value: 'admin' },
+  { label: 'organizations.role.manager', value: 'manager' },
   { label: 'organizations.role.member', value: 'member' }
 ];

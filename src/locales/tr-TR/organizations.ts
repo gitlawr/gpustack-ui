@@ -12,7 +12,7 @@ export default {
   'organizations.menu.members': 'Members',
   'organizations.menu.groups': 'User Groups',
   'organizations.role.owner': 'Owner',
-  'organizations.role.admin': 'Admin',
+  'organizations.role.manager': 'Manager',
   'organizations.role.member': 'Member',
   'organizations.member.role': 'Role',
   'organizations.member.remove.confirm':

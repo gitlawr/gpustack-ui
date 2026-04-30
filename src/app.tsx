@@ -114,9 +114,24 @@ export async function getInitialState(): Promise<{
         // Platform admin defaults to "All" (no org context) so their list
         // endpoints return cross-org results. Non-admin users must always
         // operate inside an org, so we pick a sensible default.
+        //
+        // Preference order for non-admin:
+        //   1. A non-Personal Org where they have owner/manager role —
+        //      starting in their team Org makes management features
+        //      reachable without an extra Org-switcher click.
+        //   2. users.default_organization_id (typically the user's
+        //      Personal Org).
+        //   3. The Default (platform) Org if they're a member.
+        //   4. Any first available Org.
+        const teamManagedOrg = list.find(
+          (item: any) =>
+            !item.is_personal &&
+            (item.role === 'owner' || item.role === 'manager')
+        );
         const fallback = userInfo?.is_admin
           ? null
-          : (userInfo as any)?.default_organization_id ||
+          : teamManagedOrg?.id ||
+            (userInfo as any)?.default_organization_id ||
             list.find((item: any) => item.is_platform)?.id ||
             list[0]?.id ||
             null;

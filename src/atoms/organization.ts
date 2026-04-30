@@ -7,6 +7,7 @@ export interface Organization {
   slug: string;
   description?: string;
   is_platform?: boolean;
+  is_personal?: boolean;
   billing_account_ref?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -15,12 +16,12 @@ export interface Organization {
 export interface OrganizationMembership {
   user_id: number;
   organization_id: number;
-  role: 'owner' | 'admin' | 'member';
+  role: 'owner' | 'manager' | 'member';
   created_at?: string;
 }
 
 export interface OrganizationListItem extends Organization {
-  role?: 'owner' | 'admin' | 'member';
+  role?: 'owner' | 'manager' | 'member';
 }
 
 export const currentOrganizationIdAtom = atomWithStorage<number | null>(
@@ -28,7 +29,12 @@ export const currentOrganizationIdAtom = atomWithStorage<number | null>(
   null
 );
 
-export const organizationListAtom = atom<OrganizationListItem[]>([]);
+// Persisted so the access plugin (which runs outside of React) can
+// read membership roles from localStorage to gate menu visibility.
+export const organizationListAtom = atomWithStorage<OrganizationListItem[]>(
+  'organizationList',
+  []
+);
 
 export const currentOrganizationAtom = atom<OrganizationListItem | null>(
   (get) => {

@@ -1,14 +1,27 @@
+import {
+  currentOrganizationAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
 import { json2Yaml, yaml2Json } from '@/pages/backends/config';
+import { queryOrganizationsList } from '@/services/organizations/apis';
+import { useModel } from '@@/plugin-model';
 import {
   Input as CInput,
   CollapsePanel,
+  Select as SealSelect,
   Textarea as SealTextArea
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Form } from 'antd';
-import React, { forwardRef, useEffect, useImperativeHandle } from 'react';
+import { useAtomValue } from 'jotai';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useState
+} from 'react';
 import { ProviderType, ProviderValueMap } from '../config';
 import {
   ClusterFormData as FormData,
@@ -31,6 +44,32 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
     const intl = useIntl();
     const [activeKey, setActiveKey] = React.useState<string[]>([]);
     const advanceConfigRef = React.useRef<any>(null);
+    const currentOrg = useAtomValue(currentOrganizationAtom);
+    const memberOrgList = useAtomValue(organizationListAtom);
+    const { initialState } = useModel('@@initialState') || {};
+    const isAdmin = !!initialState?.currentUser?.is_admin;
+    const [adminOrgList, setAdminOrgList] = useState<
+      { id: number; name: string }[]
+    >([]);
+    useEffect(() => {
+      if (!isAdmin || action !== PageAction.CREATE) return;
+      queryOrganizationsList({ page: -1 }).then((res: any) => {
+        const items = res?.items || res || [];
+        setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
+      });
+    }, [isAdmin, action]);
+    // Admin can choose any Org or "Platform-shared" (null). Non-admin
+    // (Org owner/admin) can only own a cluster on behalf of their own
+    // Org — render a single locked option.
+    const orgOptions = isAdmin
+      ? [
+          {
+            value: null as number | null,
+            label: intl.formatMessage({ id: 'clusters.form.owner.platform' })
+          },
+          ...adminOrgList.map((o) => ({ value: o.id, label: o.name }))
+        ]
+      : memberOrgList.map((o) => ({ value: o.id, label: o.name }));
 
     const handleOnCollapseChange = async (keys: string | string[]) => {
       setActiveKey(Array.isArray(keys) ? keys : [keys]);
@@ -172,6 +211,23 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
             trim={false}
           ></CInput.Input>
         </Form.Item>
+        {action === PageAction.CREATE && (
+          <Form.Item<FormData>
+            name="organization_id"
+            initialValue={isAdmin ? null : currentOrg?.id}
+            rules={[
+              {
+                required: false
+              }
+            ]}
+          >
+            <SealSelect
+              label={intl.formatMessage({ id: 'clusters.form.owner' })}
+              options={orgOptions as any}
+              disabled={!isAdmin && memberOrgList.length <= 1}
+            ></SealSelect>
+          </Form.Item>
+        )}
         {provider === ProviderValueMap.DigitalOcean && (
           <CloudProvider
             provider={provider}
