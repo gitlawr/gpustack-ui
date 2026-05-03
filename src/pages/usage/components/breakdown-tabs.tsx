@@ -78,8 +78,10 @@ const BreakdownTabs: React.FC<{
         )
       }
     ].filter((item) => {
+      // Users tab is provider-side breakdown — only meaningful when
+      // the page is in org scope (admin / Org owner/manager view).
       if (item.key === 'users') {
-        return scope === 'all';
+        return scope === 'org';
       }
       return true;
     });

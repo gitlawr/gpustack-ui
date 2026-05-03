@@ -1,8 +1,10 @@
+import { currentOrganizationIdAtom } from '@/atoms/organization';
 import { baseColorMap } from '@/pages/dashboard/config';
 import { formatLargeNumber } from '@/utils';
-import { useModel } from '@@/plugin-model';
+import { useAccess } from '@@/plugin-access';
 import { SimpleCard } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
+import { useAtomValue } from 'jotai';
 import React, { useEffect, useMemo, useState } from 'react';
 import BreakdownTabs from './components/breakdown-tabs';
 import DailyUsage from './components/daily-usage';
@@ -16,8 +18,20 @@ type DateType = 'date' | 'week' | 'month' | 'quarter' | 'year';
 
 const Usage: React.FC = () => {
   const intl = useIntl();
-  const initialInfo = useModel('@@initialState');
-  const { initialState } = initialInfo || {};
+  // Two separate signals:
+  // - `canUseOrgScope`: caller is admin OR Org owner/manager. Drives
+  //   the *default* scope (org). Stays true even in admin "All" mode,
+  //   since admin acting platform-wide should land on the org-scope
+  //   filter (which without a current_org_id reduces to "no filter" =
+  //   all platform usage).
+  // - `canSeeOrgUsage`: same plus a current Org context. The toggle
+  //   only renders when there's something to toggle *to* (i.e. a
+  //   specific Org to scope to). Admin in "All" sees no toggle since
+  //   both scopes would render the same data.
+  const access = useAccess();
+  const currentOrgId = useAtomValue(currentOrganizationIdAtom);
+  const canUseOrgScope = !!(access as any)?.canManageInfra;
+  const canSeeOrgUsage = canUseOrgScope && currentOrgId != null;
   const { exportTable } = useExportTable();
   const [openExportModal, setOpenExportModal] = useState(false);
   const [breakdownRefreshKey, setBreakdownRefreshKey] = useState(0);
@@ -66,16 +80,25 @@ const Usage: React.FC = () => {
 
   const { filters, commonFilters, fetchData, timeSeriesData, filterBar } =
     useUsageFilters({
-      initialScope: initialState?.currentUser?.is_admin ? 'all' : 'self',
+      initialScope: canUseOrgScope ? 'org' : 'mine',
+      canSeeOrgUsage,
       metaData,
       chartFilters,
       summaryColumns
     });
 
   useEffect(() => {
-    fetchMetaData();
+    fetchMetaData(commonFilters.scope);
     fetchData(commonFilters, chartFilters);
   }, []);
+
+  // Refetch metadata when scope flips so filter dropdowns reflect the
+  // new scope's domain (org-wide users / api-keys vs my own).
+  useEffect(() => {
+    fetchMetaData(commonFilters.scope);
+    // intentionally no other deps — the page only refetches meta on
+    // explicit scope toggle, not every filter tweak.
+  }, [commonFilters.scope]);
 
   const handleChartFilterChange = (type: string, value: string) => {
     setChartFilters((prev) => ({ ...prev, [type]: value }));

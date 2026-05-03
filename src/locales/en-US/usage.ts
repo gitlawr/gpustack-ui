@@ -1,5 +1,7 @@
 export default {
   'usage.title': 'Usage',
+  'usage.scope.org': 'Org usage',
+  'usage.scope.mine': 'My usage',
   'usage.filter.user': 'Filter by user',
   'usage.filter.model': 'Filter by model',
   'usage.filter.apikey': 'Filter by API key',

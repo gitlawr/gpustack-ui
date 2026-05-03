@@ -86,7 +86,9 @@ const Users: React.FC<{
     }
     pendingPageResetRef.current = false;
 
-    if (scope === 'all') {
+    // Group-by-user is a provider-side breakdown — only fire when the
+    // page is in org scope (admin / Org owner/manager view).
+    if (scope === 'org') {
       fetchData({
         ...queryParams,
         group_by: ['user'],

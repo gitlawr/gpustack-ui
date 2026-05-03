@@ -40,8 +40,8 @@ export default function useQueryUsageMetaData() {
     return sortedUsers;
   };
 
-  const queryMetaData = async () => {
-    const res = await fetchData({});
+  const queryMetaData = async (scope?: string) => {
+    const res = await fetchData(scope ? { scope } : {});
     const sortedUsers = sortUsers(res?.filters?.users || []);
     const data = {
       models: groupToOptions(res?.filters?.models || [], {

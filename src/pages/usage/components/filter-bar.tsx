@@ -1,6 +1,5 @@
 import useRangePickerPreset from '@/pages/dashboard/hooks/use-rangepicker-preset';
 import ProviderLogo from '@/pages/maas-provider/components/provider-logo';
-import { useModel } from '@@/plugin-model';
 import { DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 import {
   AutoTooltip,
@@ -9,7 +8,7 @@ import {
   SimpleSelect
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
-import { Button, DatePicker, Dropdown, MenuProps } from 'antd';
+import { Button, DatePicker, Dropdown, MenuProps, Segmented } from 'antd';
 import dayjs from 'dayjs';
 import React from 'react';
 import { GroupOption } from '../config';
@@ -30,6 +29,10 @@ type DateType = 'date' | 'week' | 'month' | 'quarter' | 'year';
 interface FilterBarProps {
   pageType?: 'page' | 'modal';
   scope: string;
+  // True iff the caller may switch the toggle to "Org usage". For
+  // members / regular users the toggle is hidden; the page is always
+  // showing their own data.
+  canSeeOrgUsage?: boolean;
   startDate: string;
   endDate: string;
   selectedModels: string[];
@@ -65,6 +68,8 @@ interface FilterBarProps {
 const FilterBar: React.FC<FilterBarProps> = (props) => {
   const {
     pageType = 'page',
+    scope,
+    canSeeOrgUsage = false,
     startDate,
     endDate,
     selectedUsers,
@@ -77,6 +82,7 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
     handleActiveModelsChange,
     handleActiveApiKeysChange,
     handlePickerChange,
+    onScopeChange,
     onDateChange,
     onModelsChange,
     onUsersChange,
@@ -85,6 +91,7 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
     onExportTable,
     handleSearch
   } = props;
+  const isOrgScope = scope === 'org';
   const intl = useIntl();
   const {
     disabledRangeDaysDate,
@@ -122,9 +129,6 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
       }
     ]
   });
-
-  const initialInfo = useModel('@@initialState');
-  const { initialState } = initialInfo || {};
 
   const exportMenuItems: MenuProps['items'] = [
     {
@@ -292,6 +296,22 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
   return (
     <div className={FilterBarCss.wrapper}>
       <div className={FilterBarCss.filters}>
+        {canSeeOrgUsage && (
+          <Segmented
+            value={scope}
+            onChange={(val) => onScopeChange(val as string)}
+            options={[
+              {
+                label: intl.formatMessage({ id: 'usage.scope.org' }),
+                value: 'org'
+              },
+              {
+                label: intl.formatMessage({ id: 'usage.scope.mine' }),
+                value: 'mine'
+              }
+            ]}
+          />
+        )}
         <DatePicker.RangePicker
           maxDate={dayjs()}
           value={rangePickerValue}
@@ -344,7 +364,7 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
             getPopupContainer={(triggerNode) => triggerNode.parentNode}
           ></Cascader>
         </div>
-        {initialState?.currentUser?.is_admin && (
+        {isOrgScope && (
           <>
             <SimpleSelect
               allowClear
@@ -401,7 +421,7 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
             </div>
           </>
         )}
-        {!initialState?.currentUser?.is_admin && (
+        {!isOrgScope && (
           <SimpleSelect
             allowClear
             showSearch

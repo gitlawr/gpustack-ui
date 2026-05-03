@@ -1,5 +1,7 @@
 export default {
   'usage.title': '使用量',
+  'usage.scope.org': '组织使用量',
+  'usage.scope.mine': '我的使用量',
   'usage.filter.user': '按用户查询',
   'usage.filter.model': '按模型查询',
   'usage.filter.apikey': '按 API 密钥查询',

@@ -23,6 +23,9 @@ type GroupOptionType = GroupOption<UsageFilterItem>;
 
 interface UseUsageFiltersParams {
   initialScope: string;
+  // True iff the caller can hit the "org" backend scope (admin OR Org
+  // owner/manager). Drives the FilterBar toggle visibility.
+  canSeeOrgUsage?: boolean;
   metaData: {
     models?: GroupOptionType[];
     users?: UserOptionType[];
@@ -66,6 +69,7 @@ interface UseUsageFiltersParams {
 
 export const useUsageFilters = ({
   initialScope,
+  canSeeOrgUsage = false,
   metaData,
   chartFilters,
   summaryColumns,
@@ -208,6 +212,7 @@ export const useUsageFilters = ({
 
     fetchTimeSeriesData({
       ...currentChartFilters,
+      scope: currentSelectedFilters.scope,
       start_date: currentSelectedFilters.start_date,
       end_date: currentSelectedFilters.end_date,
       filters: nextFilters
@@ -293,6 +298,7 @@ export const useUsageFilters = ({
 
   const filterBar = {
     scope: commonFilters.scope,
+    canSeeOrgUsage,
     startDate: commonFilters.start_date,
     endDate: commonFilters.end_date,
     selectedModels: commonFilters.models,
