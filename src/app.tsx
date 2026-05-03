@@ -1,4 +1,5 @@
 import {
+  allOrganizationsAtom,
   currentOrganizationIdAtom,
   organizationListAtom
 } from '@/atoms/organization';
@@ -11,7 +12,10 @@ import { enterprisePluginReady } from '@/plugins/enterprise-ready';
 import { GPUStackPluginManager } from '@/plugins/manager';
 import { mergeEnterpriseRoutes } from '@/plugins/route-merger';
 import { requestConfig } from '@/request-config';
-import { queryMyOrganizations } from '@/services/organizations/apis';
+import {
+  queryMyOrganizations,
+  queryOrganizationsList
+} from '@/services/organizations/apis';
 import {
   queryCurrentUserState,
   queryVersionInfo,
@@ -156,6 +160,17 @@ export async function getInitialState(): Promise<{
       if (data.is_admin) {
         getUpdateCheck();
         fetchSystemConfig();
+        // Cache the platform-wide Org list so list pages can resolve
+        // organization_id → name without fetching per-page. Admin has
+        // /v2/organizations access; non-admin gets 403, hence skip.
+        queryOrganizationsList({ page: -1 } as any)
+          .then((res: any) => {
+            const items = res?.items || res || [];
+            setAtomStorage(allOrganizationsAtom, items);
+          })
+          .catch(() => {
+            // Non-fatal — pages fall back to the membership list.
+          });
       }
       await fetchOrganizations(data);
       return data;

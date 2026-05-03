@@ -28,6 +28,9 @@ export interface FormData {
   enabled?: boolean;
   backend_source?: string;
   default_env?: Record<string, any>;
+  // null = global (admin-curated); non-null = an Org's
+  // extension/override.
+  organization_id?: number | null;
 }
 
 export interface ListItem extends FormData {

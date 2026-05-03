@@ -121,7 +121,7 @@ export default {
   'clusters.form.setDefault.tips':
     'Использовать по умолчанию для развертывания.',
   'clusters.form.owner': 'Owner',
-  'clusters.form.owner.platform': 'Platform-shared',
+  'clusters.form.owner.platform': 'Global',
   'clusters.addworker.noClusters': 'No available Docker clusters found',
   'clusters.create.steps.complete.tips': 'Cluster created successfully!',
   'clusters.create.steps.complete': 'Complete',

@@ -214,7 +214,7 @@ export default [
         icon: 'icon-backend',
         selectedIcon: 'icon-backend-filled',
         defaultIcon: 'icon-backend',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './backends/index'
       },
       {

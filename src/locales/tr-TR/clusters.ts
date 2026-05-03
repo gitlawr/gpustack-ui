@@ -120,7 +120,7 @@ export default {
   'clusters.form.setDefault': 'Varsayılan Olarak Ayarla',
   'clusters.form.setDefault.tips': 'Dağıtım için varsayılan.',
   'clusters.form.owner': 'Owner',
-  'clusters.form.owner.platform': 'Platform-shared',
+  'clusters.form.owner.platform': 'Global',
   'clusters.addworker.noClusters': 'Kullanılabilir Docker kümesi bulunamadı',
   'clusters.create.steps.complete.tips': 'Küme başarıyla oluşturuldu!',
   'clusters.create.steps.complete': 'Tamamla',

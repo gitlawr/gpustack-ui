@@ -1,3 +1,4 @@
+import { currentOrganizationIdAtom } from '@/atoms/organization';
 import { PageAction } from '@/config';
 import useTableFetch from '@/hooks/use-table-fetch';
 import {
@@ -7,8 +8,9 @@ import {
   InfiniteScrollerProvider,
   NoResult
 } from '@gpustack/core-ui';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import useMemoizedFn from 'ahooks/lib/useMemoizedFn';
+import { useAtomValue } from 'jotai';
 import _ from 'lodash';
 import { useState } from 'react';
 import PageBox from '../_components/page-box';
@@ -36,8 +38,60 @@ import useCreateBackend from './hooks/use-create-backend';
 import useExportYAML from './hooks/use-export-yaml';
 import useEnableBackend from './services/use-enable-backend';
 
+// Compare two version_config entries by the fields that actually
+// influence runtime behaviour. Anything else (UI flags, derived data)
+// gets ignored.
+const sameVersionConfig = (a: any, b: any): boolean => {
+  if (!a || !b) return false;
+  const norm = (v: any) =>
+    JSON.stringify({
+      image_name: v.image_name ?? null,
+      run_command: v.run_command ?? null,
+      entrypoint: v.entrypoint ?? null,
+      custom_framework: v.custom_framework ?? null,
+      env: v.env ?? null
+    });
+  return norm(a) === norm(b);
+};
+
+// When a non-admin Org caller edits a Global row, the server transparently
+// upserts their Org's row. To avoid bloating the Org row with duplicates
+// of every Platform version, drop entries that match Platform's identical
+// configuration — only the new / overridden ones are sent through.
+const trimVersionConfigsToDiff = (
+  submitted: any,
+  original: ListItem | null | undefined
+): any => {
+  if (!Array.isArray(submitted) || !original) return submitted;
+  const originalByKey: Record<string, any> = {};
+  if (Array.isArray(original.version_configs)) {
+    for (const v of original.version_configs as any[]) {
+      const key = (v as any).version_no;
+      if (key) originalByKey[key] = v;
+    }
+  }
+  if (original.built_in_version_configs) {
+    for (const [key, v] of Object.entries(original.built_in_version_configs)) {
+      originalByKey[key] = v;
+    }
+  }
+  return submitted.filter((vc: any) => {
+    const key = vc.version_no;
+    if (!key) return true;
+    const orig = originalByKey[key];
+    if (!orig) return true;
+    return !sameVersionConfig(vc, orig);
+  });
+};
+
 const BackendList = () => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState') || {};
+  const isAdmin = !!initialState?.currentUser?.is_admin;
+  // Hybrid scope: rows created from this page inherit the caller's
+  // current Org context. Admin in "All" mode (currentOrgId === null)
+  // creates a Global row; everyone else creates an Org-scoped row.
+  const currentOrgId = useAtomValue(currentOrganizationIdAtom);
 
   const {
     dataSource,
@@ -79,24 +133,41 @@ const BackendList = () => {
   const handleOnSubmit = async (values: FormData) => {
     try {
       if (openBackendModalStatus.action === 'create') {
-        await createBackend({ data: values });
+        await createBackend({
+          data: { ...values, organization_id: currentOrgId }
+        });
       } else {
-        console.log(
-          'openBackendModalStatus.currentData',
-          openBackendModalStatus
-        );
         const omitFields =
           openBackendModalStatus.currentData?.backend_source ===
           BackendSourceValueMap.BUILTIN
             ? ['built_in_version_configs', 'default_version']
             : ['built_in_version_configs'];
 
+        // Hybrid: when a non-admin Org caller submits edits to a Global
+        // row, the server upserts an Org row. Trim version_configs to
+        // just the new / overridden entries so Platform updates can keep
+        // flowing through to the Org rather than getting frozen by stale
+        // duplicates.
+        const isOrgOverridingGlobal =
+          !isAdmin &&
+          openBackendModalStatus.currentData?.organization_id == null &&
+          currentOrgId != null;
+        const trimmedValues = isOrgOverridingGlobal
+          ? {
+              ...values,
+              version_configs: trimVersionConfigsToDiff(
+                values.version_configs,
+                openBackendModalStatus.currentData
+              )
+            }
+          : values;
+
         await updateBackend(openBackendModalStatus.currentData!.id!, {
           data: {
             built_in_version_configs:
               openBackendModalStatus.currentData?.built_in_version_configs,
-            ..._.omit(values, omitFields),
-            health_check_path: values.health_check_path || null
+            ..._.omit(trimmedValues, omitFields),
+            health_check_path: trimmedValues.health_check_path || null
           }
         });
       }
@@ -109,7 +180,14 @@ const BackendList = () => {
   const handleOnSubmitYaml = async (values: { content: string }) => {
     try {
       if (openBackendModalStatus.action === 'create') {
-        await createBackendFromYAML({ data: values });
+        // Inject organization_id into the YAML payload so the server can
+        // tag the created row with the right tenant scope.
+        const baseJson = yaml2Json(values.content) || {};
+        const yamlContent = json2Yaml({
+          ...baseJson,
+          organization_id: currentOrgId
+        });
+        await createBackendFromYAML({ data: { content: yamlContent } });
       } else {
         const jsonData = yaml2Json(values.content);
         const yamlContent = json2Yaml({
@@ -166,7 +244,14 @@ const BackendList = () => {
     }
     // ================ Delete ================
     if (item.action === 'delete') {
-      if (item.data.backend_source === BackendSourceValueMap.COMMUNITY) {
+      // Platform community rows can't actually be deleted (admin-curated
+      // catalog) — "delete" action there is a soft-disable. Org rows of
+      // any source (including Org's extension of a community backend)
+      // are real, owner-mutable data and get a true DELETE.
+      const isPlatformCommunity =
+        item.data.backend_source === BackendSourceValueMap.COMMUNITY &&
+        item.data.organization_id == null;
+      if (isPlatformCommunity) {
         modalRef.current?.show({
           content: 'backends.title',
           operation: 'common.delete.single.confirm',

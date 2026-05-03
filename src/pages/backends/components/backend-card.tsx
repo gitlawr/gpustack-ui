@@ -1,4 +1,8 @@
 import {
+  allOrganizationsAtom,
+  organizationListAtom
+} from '@/atoms/organization';
+import {
   AutoTooltip,
   DropdownActions,
   IconFont,
@@ -8,6 +12,7 @@ import {
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Button, Tag } from 'antd';
+import { useAtomValue } from 'jotai';
 import _ from 'lodash';
 import { useMemo } from 'react';
 import semverCoerce from 'semver/functions/coerce';
@@ -160,6 +165,21 @@ const BackendCard: React.FC<BackendCardProps> = ({
   active
 }) => {
   const intl = useIntl();
+  const orgList = useAtomValue(organizationListAtom);
+  const allOrgs = useAtomValue(allOrganizationsAtom);
+  const ownerLabel = useMemo(() => {
+    if (data.organization_id == null) {
+      return intl.formatMessage({ id: 'clusters.form.owner.platform' });
+    }
+    // Admin's platform-wide cache covers every Org; member list covers
+    // the non-admin caller's own Orgs. Numeric fallback only fires if
+    // both are empty (hasn't happened in practice — but keeps the UI
+    // from rendering a blank tag).
+    const org =
+      allOrgs.find((o: any) => o.id === data.organization_id) ??
+      orgList.find((o: any) => o.id === data.organization_id);
+    return org?.name ?? `Org #${data.organization_id}`;
+  }, [data.organization_id, allOrgs, orgList, intl]);
 
   const handleOnSelect = (item: any) => {
     onSelect?.({ action: item.key, data: data });
@@ -241,6 +261,26 @@ const BackendCard: React.FC<BackendCardProps> = ({
     );
   };
 
+  const renderOwner = () => {
+    if (layout === 'community') {
+      return null;
+    }
+    return (
+      <Tag
+        className="font-400"
+        variant="filled"
+        color={data.organization_id == null ? 'default' : 'gold'}
+        style={{
+          borderRadius: 'var(--ant-border-radius)',
+          margin: 0,
+          width: 'max-content'
+        }}
+      >
+        {ownerLabel}
+      </Tag>
+    );
+  };
+
   const renderSource = () => {
     if (layout === 'community') {
       return null;
@@ -249,29 +289,32 @@ const BackendCard: React.FC<BackendCardProps> = ({
       ? BackendSourceLabelMap[BackendSourceValueMap.BUILTIN] || ''
       : BackendSourceLabelMap[data.backend_source] || '';
     if (!source) {
-      return null;
+      return <div style={{ display: 'flex', gap: 6 }}>{renderOwner()}</div>;
     }
     return (
-      <Tag
-        color={
-          TagColorMap[
-            data.is_built_in
-              ? BackendSourceValueMap.BUILTIN
-              : data.backend_source
-          ]
-        }
-        className="font-400"
-        variant="filled"
-        style={{
-          borderRadius: 'var(--ant-border-radius)',
-          margin: 0,
-          width: 'max-content'
-        }}
-      >
-        {intl.formatMessage({
-          id: source
-        })}
-      </Tag>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <Tag
+          color={
+            TagColorMap[
+              data.is_built_in
+                ? BackendSourceValueMap.BUILTIN
+                : data.backend_source
+            ]
+          }
+          className="font-400"
+          variant="filled"
+          style={{
+            borderRadius: 'var(--ant-border-radius)',
+            margin: 0,
+            width: 'max-content'
+          }}
+        >
+          {intl.formatMessage({
+            id: source
+          })}
+        </Tag>
+        {renderOwner()}
+      </div>
     );
   };
 

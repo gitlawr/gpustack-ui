@@ -58,9 +58,11 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
         setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
       });
     }, [isAdmin, action]);
-    // Admin can choose any Org or "Platform-shared" (null). Non-admin
-    // (Org owner/admin) can only own a cluster on behalf of their own
-    // Org — render a single locked option.
+    // Admin: full dropdown (Global + every Org). Non-admin: pick from
+    // the team Orgs where the caller holds owner/manager — Personal
+    // Orgs and member-only Orgs are excluded since they can't own
+    // shared infra. With one matching Org the dropdown collapses to a
+    // single (still selectable) option.
     const orgOptions = isAdmin
       ? [
           {
@@ -69,7 +71,12 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
           },
           ...adminOrgList.map((o) => ({ value: o.id, label: o.name }))
         ]
-      : memberOrgList.map((o) => ({ value: o.id, label: o.name }));
+      : memberOrgList
+          .filter(
+            (o) =>
+              !o.is_personal && (o.role === 'owner' || o.role === 'manager')
+          )
+          .map((o) => ({ value: o.id, label: o.name }));
 
     const handleOnCollapseChange = async (keys: string | string[]) => {
       setActiveKey(Array.isArray(keys) ? keys : [keys]);
@@ -212,19 +219,28 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
           ></CInput.Input>
         </Form.Item>
         {action === PageAction.CREATE && (
+          // When the caller has no real choice (≤1 option), hide the
+          // dropdown — `initialValue` still flows through the form
+          // submission. Typical "hidden" cases:
+          //  - non-admin who's only in one team Org
+          //  - admin on a deployment without a Global option
+          // Admin with at least 2 options (Global + ≥1 Org) always sees
+          // the picker since the choice is meaningful.
           <Form.Item<FormData>
             name="organization_id"
-            initialValue={isAdmin ? null : currentOrg?.id}
-            rules={[
-              {
-                required: false
-              }
-            ]}
+            initialValue={
+              // Admin: follow current context — "All" mode → Global,
+              // Org context → that Org. Non-admin: their current Org id
+              // (which `access.ts` already guarantees is non-personal
+              // when they reach this form).
+              isAdmin ? (currentOrg?.id ?? null) : currentOrg?.id
+            }
+            rules={[{ required: false }]}
+            hidden={orgOptions.length <= 1}
           >
             <SealSelect
               label={intl.formatMessage({ id: 'clusters.form.owner' })}
               options={orgOptions as any}
-              disabled={!isAdmin && memberOrgList.length <= 1}
             ></SealSelect>
           </Form.Item>
         )}

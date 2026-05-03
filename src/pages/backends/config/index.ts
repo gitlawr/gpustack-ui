@@ -109,7 +109,15 @@ export const backendActions = [
     icon: icons.DeleteOutlined,
     locale: true,
     danger: true,
-    show: (record: any) => !record.is_built_in
+    // Delete is hidden only for Platform built-in rows (vLLM / SGLang /
+    // ...) — those are seeded by the controller and admin can't drop
+    // them. Everything else gets the action; the *intent* depends on
+    // the row:
+    //   - Platform community → soft-disable (handleDisableCommunityBackend)
+    //   - Platform Custom → real DELETE
+    //   - Org rows (any source) → real DELETE of the Org row
+    // The branching is in handleOnSelect/index.tsx.
+    show: (record: any) => !record.is_built_in || record.organization_id != null
   }
 ];
 

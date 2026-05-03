@@ -46,3 +46,10 @@ export const currentOrganizationAtom = atom<OrganizationListItem | null>(
     return list.find((item) => item.id === id) ?? list[0] ?? null;
   }
 );
+
+// Platform-wide org cache (admin-only). Populated by app.tsx after
+// login when the user is admin so list pages can resolve any
+// organization_id → name without an extra fetch per page. Empty for
+// non-admin (they can rely on `organizationListAtom` for their member
+// orgs which is all they ever need to display).
+export const allOrganizationsAtom = atom<Organization[]>([]);

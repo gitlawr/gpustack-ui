@@ -103,7 +103,7 @@ export interface ClusterFormData {
   worker_config?: Record<string, any>;
   worker_pools?: NodePoolFormData[];
   k8s_volume_mounts?: VolumeMount[];
-  // null = platform-shared (admin only); non-null = owned by that Org.
+  // null = global (admin only); non-null = owned by that Org.
   organization_id?: number | null;
 }
 
