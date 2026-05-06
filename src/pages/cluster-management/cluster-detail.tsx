@@ -72,6 +72,11 @@ const ClusterDetailModal = () => {
             key: 'quotas',
             label: intl.formatMessage({ id: 'organizations.quotas.title' }),
             icon: <IconFont type="icon-speed" />,
+            // Tear the Quotas pane down on tab switch so the row list
+            // refetches each time it's opened — granting access in the
+            // sibling Access tab needs to surface here without a manual
+            // page refresh.
+            destroyOnHidden: true,
             children: <ClusterQuotasTab clusterId={Number(id)} />
           }
         ]}

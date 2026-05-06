@@ -1,4 +1,5 @@
 import {
+  allOrganizationsAtom,
   currentOrganizationIdAtom,
   organizationListAtom
 } from '@/atoms/organization';
@@ -14,9 +15,9 @@ import {
   UserGroupFormData
 } from '@/services/organizations/apis';
 import { AutoTooltip } from '@gpustack/core-ui';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
-import { Button, Empty, message, Popconfirm, Select, Space, Table } from 'antd';
+import { Button, Empty, message, Popconfirm, Space, Table } from 'antd';
 import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import PageBox from '../_components/page-box';
@@ -26,10 +27,31 @@ import GroupModal from './components/group-modal';
 const UserGroups: React.FC = () => {
   const intl = useIntl();
   const orgList = useAtomValue(organizationListAtom);
+  const allOrgs = useAtomValue(allOrganizationsAtom);
   const currentOrgId = useAtomValue(currentOrganizationIdAtom);
+  const { initialState } = useModel('@@initialState') || {};
+  const isAdmin = !!initialState?.currentUser?.is_admin;
 
-  // Allow operating on any org the user belongs to.
-  const [activeOrgId, setActiveOrgId] = useState<number | null>(currentOrgId);
+  // Scope to the top-right Org switcher's current selection — the same
+  // signal the rest of the app uses for "what Org am I managing right
+  // now". Admin in "All" mode (currentOrgId == null) keeps a fallback
+  // so list queries still have an Org id, but the create modal exposes
+  // an Org picker so admin can drop the new group into any Org without
+  // switching context.
+  const fallbackOrgId =
+    (isAdmin ? allOrgs.find((o: any) => o.is_platform)?.id : undefined) ??
+    orgList.find((o) => !o.is_personal)?.id ??
+    orgList[0]?.id ??
+    null;
+  const activeOrgId = currentOrgId ?? fallbackOrgId;
+  const showOrgPicker = isAdmin && currentOrgId == null;
+  const orgPickerOptions = isAdmin
+    ? allOrgs.map((o: any) => ({
+        id: o.id,
+        name: o.name,
+        is_platform: o.is_platform
+      }))
+    : [];
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState<{
@@ -42,12 +64,6 @@ const UserGroups: React.FC = () => {
     open: boolean;
     group: UserGroup | null;
   }>({ open: false, group: null });
-
-  useEffect(() => {
-    if (!activeOrgId && orgList.length) {
-      setActiveOrgId(orgList[0].id);
-    }
-  }, [orgList, activeOrgId]);
 
   const fetchGroups = useMemoizedFn(async () => {
     if (!activeOrgId) return;
@@ -86,17 +102,23 @@ const UserGroups: React.FC = () => {
     });
   };
 
-  const handleSubmit = async (values: UserGroupFormData) => {
-    if (!activeOrgId) return;
+  const handleSubmit = async (
+    values: UserGroupFormData & { organization_id?: number }
+  ) => {
+    // For Create, prefer the modal's Org picker (admin in "All"); for
+    // Edit and the implicit-context cases, fall through to activeOrgId.
+    const targetOrgId = values.organization_id ?? activeOrgId;
+    if (!targetOrgId) return;
+    const { organization_id: _omit, ...payload } = values;
     try {
       if (modalState.action === PageAction.EDIT && modalState.data) {
         await updateUserGroup({
-          orgId: activeOrgId,
+          orgId: targetOrgId,
           groupId: modalState.data.id,
-          data: values
+          data: payload
         });
       } else {
-        await createUserGroup({ orgId: activeOrgId, data: values });
+        await createUserGroup({ orgId: targetOrgId, data: payload });
       }
       message.success(intl.formatMessage({ id: 'common.message.success' }));
       setModalState({ ...modalState, open: false });
@@ -185,24 +207,11 @@ const UserGroups: React.FC = () => {
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: 'center',
             marginBlock: '24px 16px'
           }}
         >
-          <Space>
-            <span style={{ color: 'var(--ant-color-text-tertiary)' }}>
-              {intl.formatMessage({ id: 'organizations.groups.selectOrg' })}:
-            </span>
-            <Select
-              style={{ minWidth: 240 }}
-              value={activeOrgId ?? undefined}
-              options={orgList.map((o) => ({ value: o.id, label: o.name }))}
-              onChange={(val) => {
-                setActiveOrgId(val);
-              }}
-            />
-          </Space>
           <Button type="primary" onClick={handleAdd} disabled={!activeOrgId}>
             {intl.formatMessage({ id: 'organizations.groups.create' })}
           </Button>
@@ -231,6 +240,9 @@ const UserGroups: React.FC = () => {
         action={modalState.action}
         title={modalState.title}
         data={modalState.data}
+        showOrgPicker={showOrgPicker}
+        orgOptions={orgPickerOptions}
+        defaultOrgId={fallbackOrgId}
         onCancel={() => setModalState({ ...modalState, open: false })}
         onOk={handleSubmit}
       />

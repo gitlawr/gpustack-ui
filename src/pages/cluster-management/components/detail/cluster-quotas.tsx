@@ -1,4 +1,6 @@
+import { queryClusterItem } from '@/pages/cluster-management/apis';
 import {
+  queryClusterAccess,
   queryOrganizationQuotas,
   queryOrganizationsList,
   TenantQuota,
@@ -35,8 +37,41 @@ const ClusterQuotasTab: React.FC<Props> = ({ clusterId }) => {
   const fetchData = useMemoizedFn(async () => {
     setLoading(true);
     try {
-      const orgs = await queryOrganizationsList({ page: -1 });
-      const orgList = (((orgs as any)?.items || orgs || []) as any[]) || [];
+      // Quota rows reflect Orgs that can actually deploy on this
+      // cluster: the cluster's owner Org (implicit USER access) plus
+      // any Org granted access via cluster_access. Listing every Org
+      // would imply quotas exist for tenants that can't even see the
+      // cluster.
+      const emptyAccess: any[] = [];
+      const [cluster, accessList, orgsResp] = await Promise.all([
+        queryClusterItem({ id: clusterId }).catch(() => null),
+        queryClusterAccess(clusterId).catch(() => emptyAccess),
+        queryOrganizationsList({ page: -1 })
+      ]);
+
+      const allOrgs: any[] =
+        (orgsResp as any)?.items || (orgsResp as any) || [];
+      const orgById = new Map<number, any>();
+      for (const o of allOrgs) orgById.set(o.id, o);
+
+      const accessibleOrgIds = new Set<number>();
+      const ownerOrgId = (cluster as any)?.organization_id;
+      if (ownerOrgId != null) accessibleOrgIds.add(ownerOrgId);
+      const accessEntries: any[] = accessList || [];
+      for (const entry of accessEntries) {
+        // Use the server-resolved principal_organization_id: ORG grants
+        // expose their own Org; GROUP grants expose the group's owning
+        // Org; USER grants leave it NULL because a user can deploy under
+        // any of their Orgs and quota attribution is per (user, Org)
+        // context at deploy time.
+        if (entry.principal_organization_id != null) {
+          accessibleOrgIds.add(entry.principal_organization_id);
+        }
+      }
+
+      const orgList = Array.from(accessibleOrgIds)
+        .map((id) => orgById.get(id))
+        .filter(Boolean);
 
       const merged: QuotaRow[] = await Promise.all(
         orgList.map(async (org: any) => {

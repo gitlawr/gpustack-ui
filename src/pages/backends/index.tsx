@@ -133,8 +133,20 @@ const BackendList = () => {
   const handleOnSubmit = async (values: FormData) => {
     try {
       if (openBackendModalStatus.action === 'create') {
+        // Picker only renders for admin in "All" mode (currentOrgId
+        // null). When present, unwrap the "__platform__" sentinel to
+        // NULL or pass through an Org id. Otherwise fall back to the
+        // caller's current Org context — same as cluster / credential.
+        const pickerValue = (values as any).organization_id_picker;
+        const resolvedOrgId =
+          pickerValue !== undefined
+            ? pickerValue === '__platform__'
+              ? null
+              : pickerValue
+            : currentOrgId;
+        const { organization_id_picker: _omit, ...rest } = values as any;
         await createBackend({
-          data: { ...values, organization_id: currentOrgId }
+          data: { ...rest, organization_id: resolvedOrgId }
         });
       } else {
         const omitFields =

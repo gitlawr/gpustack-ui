@@ -1,11 +1,8 @@
+import PrincipalSelect from '@/components/principal-select';
 import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
 import { RouteItem } from '@/pages/model-routes/config/types';
 import { queryUsersList } from '@/pages/users/apis';
-import {
-  queryOrganizationsList,
-  queryUserGroups
-} from '@/services/organizations/apis';
 import {
   CloseOutlined,
   DownOutlined,
@@ -50,7 +47,19 @@ import {
 
 type TransferKey = string | number | bigint;
 
+// `ALLOWED_USERS` and `ALLOWED_PRINCIPALS` overlap (USERS is the user-
+// only subset of PRINCIPALS), but they coexist deliberately:
+// `ALLOWED_USERS` ships in OSS, `ALLOWED_PRINCIPALS` (with org/group
+// grants) lands with the multi-tenancy work. Keep both options visible
+// so OSS routes upgraded into enterprise stay manageable.
 const accessScopeTips = [
+  {
+    title: {
+      text: 'models.accessSettings.org',
+      locale: true
+    },
+    tips: 'models.accessSettings.org.tips'
+  },
   {
     title: {
       text: 'models.accessSettings.authed',
@@ -104,85 +113,45 @@ const PrincipalsField: React.FC<{
   const intl = useIntl();
   const value: AccessPrincipal[] = Form.useWatch('principals', form) || [];
 
-  const [orgs, setOrgs] = useState<{ id: number; name: string }[]>([]);
-  const [users, setUsers] = useState<{ id: number; username: string }[]>([]);
-  const [groups, setGroups] = useState<
-    { id: number; name: string; organization_id: number }[]
-  >([]);
   const [type, setType] = useState<AccessPrincipalType>('user');
   const [orgForGroup, setOrgForGroup] = useState<number | undefined>();
-  const [pendingId, setPendingId] = useState<number | undefined>();
+  // Multi-select picker state: ids selected in the dropdown plus a
+  // label cache so each id can be persisted with its display name when
+  // the user clicks Add.
+  const [pendingIds, setPendingIds] = useState<number[]>([]);
+  const labelCacheRef = useRef<Map<number, string>>(new Map());
 
-  useEffect(() => {
-    queryOrganizationsList({ page: -1 }).then((res: any) =>
-      setOrgs((res?.items || res || []) as any)
-    );
-    queryUsersList({ page: -1 }).then((res: any) =>
-      setUsers((res?.items || res || []) as any)
-    );
-  }, []);
-
-  useEffect(() => {
-    if (type === 'group' && orgForGroup) {
-      queryUserGroups(orgForGroup, { page: -1 }).then((res: any) => {
-        const items: any[] = Array.isArray(res) ? res : res?.items || [];
-        setGroups(
-          items.map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            organization_id: g.organization_id
-          }))
-        );
-      });
-    } else {
-      setGroups([]);
-    }
-  }, [type, orgForGroup]);
+  const resetPicker = () => {
+    setPendingIds([]);
+  };
 
   const updateValue = (next: AccessPrincipal[]) => {
     form.setFieldsValue({ principals: next });
     onChange?.(next);
   };
 
-  const lookupName = (p: AccessPrincipal): string | undefined => {
-    if (p.principal_name) return p.principal_name;
-    if (p.principal_type === 'org') {
-      return orgs.find((o) => o.id === p.principal_id)?.name;
-    }
-    if (p.principal_type === 'user') {
-      return users.find((u) => u.id === p.principal_id)?.username;
-    }
-    if (p.principal_type === 'group') {
-      return groups.find((g) => g.id === p.principal_id)?.name;
-    }
-    return undefined;
-  };
+  // Records carry `principal_name` resolved server-side at fetch time
+  // (or saved at add-time below); the column render uses that directly.
+  const lookupName = (p: AccessPrincipal): string | undefined =>
+    p.principal_name;
 
   const handleAdd = () => {
-    if (pendingId == null) return;
-    if (
-      value.some(
-        (p) => p.principal_type === type && p.principal_id === pendingId
-      )
-    ) {
-      return;
-    }
-    const principal_name =
-      type === 'org'
-        ? orgs.find((o) => o.id === pendingId)?.name
-        : type === 'user'
-          ? users.find((u) => u.id === pendingId)?.username
-          : groups.find((g) => g.id === pendingId)?.name;
-    updateValue([
-      ...value,
-      {
+    if (pendingIds.length === 0) return;
+    const existing = new Set(
+      value.filter((p) => p.principal_type === type).map((p) => p.principal_id)
+    );
+    const additions: AccessPrincipal[] = [];
+    for (const id of pendingIds) {
+      if (existing.has(id)) continue;
+      additions.push({
         principal_type: type,
-        principal_id: pendingId,
-        principal_name,
+        principal_id: id,
+        principal_name: labelCacheRef.current.get(id),
         organization_id: type === 'group' ? orgForGroup : undefined
-      }
-    ]);
-    setPendingId(undefined);
+      });
+    }
+    if (additions.length > 0) updateValue([...value, ...additions]);
+    resetPicker();
   };
 
   const handleRemove = (p: AccessPrincipal) => {
@@ -196,13 +165,6 @@ const PrincipalsField: React.FC<{
       )
     );
   };
-
-  const idOptions =
-    type === 'org'
-      ? orgs.map((o) => ({ value: o.id, label: o.name }))
-      : type === 'user'
-        ? users.map((u) => ({ value: u.id, label: u.username }))
-        : groups.map((g) => ({ value: g.id, label: g.name }));
 
   const columns = [
     {
@@ -248,7 +210,7 @@ const PrincipalsField: React.FC<{
           style={{ width: 140 }}
           onChange={(v) => {
             setType(v);
-            setPendingId(undefined);
+            resetPicker();
             setOrgForGroup(undefined);
           }}
           options={[
@@ -271,31 +233,40 @@ const PrincipalsField: React.FC<{
           ]}
         />
         {type === 'group' && (
-          <Select
+          <PrincipalSelect
+            kind="org"
             placeholder={intl.formatMessage({
               id: 'organizations.groups.selectOrg'
             })}
             value={orgForGroup}
             onChange={(v) => {
-              setOrgForGroup(v);
-              setPendingId(undefined);
+              setOrgForGroup(v as number | undefined);
+              resetPicker();
             }}
             style={{ width: 200 }}
-            options={orgs.map((o) => ({ value: o.id, label: o.name }))}
           />
         )}
-        <Select
-          showSearch
-          optionFilterProp="label"
+        <PrincipalSelect
+          kind={type as any}
+          mode="multiple"
+          orgId={type === 'group' ? (orgForGroup ?? null) : undefined}
           placeholder={intl.formatMessage({
             id: 'organizations.access.principal'
           })}
-          value={pendingId}
-          onChange={setPendingId}
-          options={idOptions}
+          value={pendingIds}
+          onChange={(v, opt) => {
+            const ids = Array.isArray(v) ? v : v == null ? [] : [v];
+            setPendingIds(ids);
+            const opts = Array.isArray(opt) ? opt : opt ? [opt] : [];
+            for (const o of opts) labelCacheRef.current.set(o.value, o.label);
+          }}
           style={{ flex: 1 }}
         />
-        <Button type="primary" onClick={handleAdd} disabled={pendingId == null}>
+        <Button
+          type="primary"
+          onClick={handleAdd}
+          disabled={pendingIds.length === 0}
+        >
           {intl.formatMessage({ id: 'common.button.add' })}
         </Button>
       </Space.Compact>
@@ -563,6 +534,10 @@ const AccessControlForm = forwardRef((props: AccessControlFormProps, ref) => {
           onChange={handleOnPolicyChange}
           style={{ marginBottom: 12 }}
           options={[
+            {
+              label: intl.formatMessage({ id: 'models.accessSettings.org' }),
+              value: 'org'
+            },
             {
               label: intl.formatMessage({ id: 'models.accessSettings.authed' }),
               value: 'authed'

@@ -31,6 +31,10 @@ export interface FormData {
   // null = global (admin-curated); non-null = an Org's
   // extension/override.
   organization_id?: number | null;
+  // UI-only field carrying the admin's Org picker value (encodes
+  // "Platform" via a sentinel string). The route in `index.tsx`
+  // unwraps it to `organization_id` before submit.
+  organization_id_picker?: number | string | null;
 }
 
 export interface ListItem extends FormData {

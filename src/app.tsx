@@ -120,7 +120,7 @@ export async function getInitialState(): Promise<{
         // operate inside an org, so we pick a sensible default.
         //
         // Preference order for non-admin:
-        //   1. A non-Personal Org where they have owner/manager role —
+        //   1. A non-Personal Org where they have admin role —
         //      starting in their team Org makes management features
         //      reachable without an extra Org-switcher click.
         //   2. users.default_organization_id (typically the user's
@@ -128,9 +128,7 @@ export async function getInitialState(): Promise<{
         //   3. The Default (platform) Org if they're a member.
         //   4. Any first available Org.
         const teamManagedOrg = list.find(
-          (item: any) =>
-            !item.is_personal &&
-            (item.role === 'owner' || item.role === 'manager')
+          (item: any) => !item.is_personal && item.role === 'admin'
         );
         const fallback = userInfo?.is_admin
           ? null

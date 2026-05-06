@@ -15,6 +15,8 @@ export default {
   'users.table.user': '用户',
   'users.form.admin': '管理员',
   'users.form.user': '普通用户',
+  'users.form.admin.help': '平台超级管理员，可管理所有组织及平台级配置。',
+  'users.form.user.help': '拥有个人组织，仅可见自己被加入的组织。',
   'users.form.newpassword': '新密码',
   'users.form.currentpassword': '当前密码',
   'users.form.updatepassword': '修改密码',

@@ -6,7 +6,7 @@ export const ME_ORGANIZATIONS_API = '/users/me/organizations';
 
 export interface MyOrganization {
   organization: Organization;
-  role: 'owner' | 'manager' | 'member';
+  role: 'admin' | 'user';
 }
 
 export interface OrganizationFormData {
@@ -18,7 +18,7 @@ export interface OrganizationFormData {
 export interface OrganizationMember {
   user_id: number;
   organization_id: number;
-  role: 'owner' | 'manager' | 'member';
+  role: 'admin' | 'user';
   username?: string;
   full_name?: string;
   email?: string;
@@ -316,6 +316,10 @@ export interface ClusterAccess {
   principal_type: PrincipalType;
   principal_id: number;
   principal_name?: string;
+  // Org the principal belongs to (server-resolved). For ORG, same as
+  // principal_id. For GROUP, the group's owning Org. For USER, NULL —
+  // a user can span multiple Orgs.
+  principal_organization_id?: number | null;
   granted_by?: number;
   created_at?: string;
 }

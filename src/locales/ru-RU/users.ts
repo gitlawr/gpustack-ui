@@ -16,6 +16,10 @@ export default {
   'users.table.user': 'пользователи',
   'users.form.admin': 'Администратор',
   'users.form.user': 'Пользователь',
+  'users.form.admin.help':
+    'Platform superuser; can manage every organization and platform-wide settings.',
+  'users.form.user.help':
+    'Regular user; gets a Personal Org and only sees organizations they have been added to.',
   'users.form.newpassword': 'Новый пароль',
   'users.form.currentpassword': 'Текущий пароль',
   'users.form.updatepassword': 'Изменить пароль',

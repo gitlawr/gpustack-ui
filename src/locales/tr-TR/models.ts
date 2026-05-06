@@ -202,6 +202,9 @@ export default {
     'örn., vllm serve Qwen/Qwen2.5-1.5B-Instruct',
   'models.accessSettings.public': 'Herkese Açık',
   'models.accessSettings.authed': 'Kimlik Doğrulamalı',
+  'models.accessSettings.org': 'Organization',
+  'models.accessSettings.org.tips':
+    "Visible only to members of the route's owning organization.",
   'models.accessSettings.allowedUsers': 'İzin verilen kullanıcılar',
   'models.accessSettings.allowedPrincipals': 'İzin verilen ilkeler',
   'models.accessSettings.allowedPrincipals.tips':

@@ -193,6 +193,8 @@ export default {
     '例如，vllm serve Qwen/Qwen2.5-1.5B-Instruct',
   'models.accessSettings.public': '公开',
   'models.accessSettings.authed': '认证用户',
+  'models.accessSettings.org': '本组织',
+  'models.accessSettings.org.tips': '仅本路由所属组织的成员可见。',
   'models.accessSettings.allowedUsers': '指定用户',
   'models.accessSettings.allowedPrincipals': '指定主体',
   'models.accessSettings.allowedPrincipals.tips':

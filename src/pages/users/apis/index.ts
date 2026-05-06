@@ -6,7 +6,7 @@ export const USERS_API = '/users';
 
 export interface UserMembership {
   organization: Organization;
-  role: 'owner' | 'manager' | 'member';
+  role: 'admin' | 'user';
 }
 
 export async function queryUserMemberships(userId: number) {

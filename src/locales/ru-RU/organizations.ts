@@ -11,10 +11,13 @@ export default {
   'organizations.platformWide.hint': 'across all organizations',
   'organizations.menu.members': 'Members',
   'organizations.menu.groups': 'User Groups',
-  'organizations.role.owner': 'Owner',
-  'organizations.role.manager': 'Manager',
-  'organizations.role.member': 'Member',
+  'organizations.role.admin': 'Admin',
+  'organizations.role.user': 'User',
   'organizations.member.role': 'Role',
+  'organizations.role.admin.help':
+    "Manages this organization's members, infrastructure, and settings.",
+  'organizations.role.user.help':
+    "Regular member; can use the organization's resources but not manage them.",
   'organizations.member.remove.confirm':
     'Remove this user from the organization?',
   'organizations.members.title': 'Members',
@@ -36,7 +39,7 @@ export default {
   'organizations.quotas.gpu': 'GPU',
   'organizations.quotas.cpu': 'CPU (cores)',
   'organizations.quotas.memory': 'Memory (GiB)',
-  'organizations.quotas.pods': 'Pods',
+  'organizations.quotas.pods': 'GPU Instances',
   'organizations.quotas.unlimited': 'Unlimited',
   'organizations.quotas.cluster': 'Cluster',
   'organizations.access.title': 'Cluster Access',

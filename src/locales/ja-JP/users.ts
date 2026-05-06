@@ -16,6 +16,10 @@ export default {
   'users.table.user': 'ユーザー',
   'users.form.admin': '管理者',
   'users.form.user': '一般ユーザー',
+  'users.form.admin.help':
+    'Platform superuser; can manage every organization and platform-wide settings.',
+  'users.form.user.help':
+    'Regular user; gets a Personal Org and only sees organizations they have been added to.',
   'users.form.newpassword': '新しいパスワード',
   'users.form.currentpassword': '現在のパスワード',
   'users.form.updatepassword': 'パスワードを変更',

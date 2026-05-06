@@ -1,7 +1,4 @@
-import {
-  currentOrganizationAtom,
-  organizationListAtom
-} from '@/atoms/organization';
+import { currentOrganizationIdAtom } from '@/atoms/organization';
 import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
 import { queryOrganizationsList } from '@/services/organizations/apis';
@@ -43,29 +40,41 @@ const AddModal: React.FC<AddModalProps> = ({
   const [form] = Form.useForm();
   const intl = useIntl();
   const { getRuleMessage } = useAppUtils();
-  const currentOrg = useAtomValue(currentOrganizationAtom);
-  const memberOrgList = useAtomValue(organizationListAtom);
+  // Use the ID atom (not the derived currentOrganizationAtom which
+  // falls back to list[0] for display) to probe "All" mode.
+  const currentOrgId = useAtomValue(currentOrganizationIdAtom);
   const { initialState } = useModel('@@initialState') || {};
   const isAdmin = !!initialState?.currentUser?.is_admin;
+  // Same picker rule as cluster: only admin in "All" mode picks; with
+  // a current Org context (Org admin / admin act-as) the form binds to
+  // that Org implicitly.
+  const showOrgPicker =
+    action === PageAction.CREATE && isAdmin && currentOrgId == null && open;
   const [adminOrgList, setAdminOrgList] = useState<
-    { id: number; name: string }[]
+    { id: number; name: string; is_platform?: boolean }[]
   >([]);
   useEffect(() => {
-    if (!isAdmin || action !== PageAction.CREATE || !open) return;
+    if (!showOrgPicker) return;
     queryOrganizationsList({ page: -1 }).then((res: any) => {
       const items = res?.items || res || [];
-      setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
+      const list = items.map((o: any) => ({
+        id: o.id,
+        name: o.name,
+        is_platform: o.is_platform
+      }));
+      setAdminOrgList(list);
+      // Seed the default after the async fetch completes — Form.Item
+      // initialValue captures at mount, before the list arrives.
+      const defaultId = list.find((o: any) => o.is_platform)?.id ?? list[0]?.id;
+      if (defaultId != null && form.getFieldValue('organization_id') == null) {
+        form.setFieldValue('organization_id', defaultId);
+      }
     });
-  }, [isAdmin, action, open]);
-  const orgOptions = isAdmin
-    ? [
-        {
-          value: null as number | null,
-          label: intl.formatMessage({ id: 'clusters.form.owner.platform' })
-        },
-        ...adminOrgList.map((o) => ({ value: o.id, label: o.name }))
-      ]
-    : memberOrgList.map((o) => ({ value: o.id, label: o.name }));
+  }, [showOrgPicker, form]);
+  const orgOptions = adminOrgList.map((o) => ({
+    value: o.id,
+    label: o.name
+  }));
 
   const handleSumit = () => {
     form.submit();
@@ -112,16 +121,15 @@ const AddModal: React.FC<AddModalProps> = ({
             required
           ></CInput.Input>
         </Form.Item>
-        {action === PageAction.CREATE && (
+        {showOrgPicker && (
           <Form.Item<FormData>
             name="organization_id"
-            initialValue={isAdmin ? null : currentOrg?.id}
-            rules={[{ required: false }]}
+            rules={[{ required: true }]}
           >
             <SealSelect
-              label={intl.formatMessage({ id: 'clusters.form.owner' })}
+              label={intl.formatMessage({ id: 'clusters.form.organization' })}
               options={orgOptions as any}
-              disabled={!isAdmin && memberOrgList.length <= 1}
+              required
             ></SealSelect>
           </Form.Item>
         )}

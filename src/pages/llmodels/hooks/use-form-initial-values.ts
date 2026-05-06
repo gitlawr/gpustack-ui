@@ -219,6 +219,7 @@ export const useGenerateWorkerOptions = () => {
       provider: item.provider as string,
       state: item.state,
       is_default: item.is_default,
+      organization_id: item.organization_id,
       workers: item.workers,
       ready_workers: item.ready_workers,
       gpus: item.gpus
@@ -245,7 +246,12 @@ export default function useFormInitialValues() {
   const [clusterList, setClusterList] = useState<
     Global.BaseOption<
       number,
-      { provider: string; state: string; is_default: boolean }
+      {
+        provider: string;
+        state: string;
+        is_default: boolean;
+        organization_id?: number | null;
+      }
     >[]
   >([]);
 
@@ -262,6 +268,7 @@ export default function useFormInitialValues() {
         provider: item.provider as string,
         state: item.state,
         is_default: item.is_default,
+        organization_id: item.organization_id,
         workers: item.workers,
         ready_workers: item.ready_workers,
         gpus: item.gpus

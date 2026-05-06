@@ -6,6 +6,7 @@ import {
   setGroupMembers,
   UserGroup
 } from '@/services/organizations/apis';
+import { DeleteOutlined } from '@ant-design/icons';
 import { GSDrawer } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
@@ -131,8 +132,8 @@ const GroupMembersDrawer: React.FC<Props> = ({
           cancelText={intl.formatMessage({ id: 'common.button.cancel' })}
           onConfirm={() => handleRemove(record)}
         >
-          <Button danger type="text" size="small">
-            {intl.formatMessage({ id: 'common.button.remove' })}
+          <Button danger type="text" size="small" icon={<DeleteOutlined />}>
+            {intl.formatMessage({ id: 'common.button.delete' })}
           </Button>
         </Popconfirm>
       )

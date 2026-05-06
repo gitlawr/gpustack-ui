@@ -1,27 +1,17 @@
-import { queryUsersList } from '@/pages/users/apis';
+import PrincipalSelect from '@/components/principal-select';
 import {
   addClusterAccess,
   ClusterAccess,
   PrincipalType,
   queryClusterAccess,
-  queryOrganizationsList,
-  queryUserGroups,
   removeClusterAccess
 } from '@/services/organizations/apis';
-import { PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteModal } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
-import {
-  Button,
-  Form,
-  message,
-  Popconfirm,
-  Select,
-  Space,
-  Table,
-  Tag
-} from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { Button, Form, message, Select, Space, Table, Tag } from 'antd';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   clusterId: number;
@@ -35,6 +25,7 @@ const principalColor = (type: PrincipalType) => {
 
 const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
   const intl = useIntl();
+  const modalRef = useRef<any>(null);
   const [list, setList] = useState<ClusterAccess[]>([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -46,10 +37,6 @@ const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
 
   const principalType = Form.useWatch('principal_type', form);
   const orgIdForGroup = Form.useWatch('organization_id', form);
-
-  const [orgs, setOrgs] = useState<{ id: number; name: string }[]>([]);
-  const [users, setUsers] = useState<{ id: number; username: string }[]>([]);
-  const [groups, setGroups] = useState<{ id: number; name: string }[]>([]);
 
   const fetchAccess = useMemoizedFn(async () => {
     setLoading(true);
@@ -66,25 +53,8 @@ const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
     fetchAccess();
   }, [fetchAccess]);
 
-  useEffect(() => {
-    if (!adding) return;
-    queryOrganizationsList({ page: -1 }).then((res: any) =>
-      setOrgs((res?.items || res || []) as any)
-    );
-    queryUsersList({ page: -1 }).then((res: any) =>
-      setUsers((res?.items || res || []) as any)
-    );
-  }, [adding]);
-
-  useEffect(() => {
-    if (principalType === 'group' && orgIdForGroup) {
-      queryUserGroups(orgIdForGroup, { page: -1 }).then((res: any) =>
-        setGroups((res?.items || res || []) as any)
-      );
-    } else {
-      setGroups([]);
-    }
-  }, [principalType, orgIdForGroup]);
+  // PrincipalSelect handles fetching + searching internally; no need
+  // to prefetch users / orgs / groups up front.
 
   const handleAdd = async () => {
     try {
@@ -103,16 +73,26 @@ const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
     } catch (_) {}
   };
 
-  const handleRemove = async (record: ClusterAccess) => {
-    try {
-      await removeClusterAccess({
-        clusterId,
-        principal_type: record.principal_type,
-        principal_id: record.principal_id
-      });
-      message.success(intl.formatMessage({ id: 'common.message.success' }));
-      fetchAccess();
-    } catch (_) {}
+  const handleRemove = (record: ClusterAccess) => {
+    // Use the shared DeleteModal so the confirmation looks like every
+    // other delete in the app (avoids the inline Popconfirm bubble).
+    const principalLabel =
+      record.principal_name ||
+      `${intl.formatMessage({ id: `organizations.principal.${record.principal_type}` })} #${record.principal_id}`;
+    modalRef.current?.show({
+      content: 'organizations.access.title',
+      operation: 'common.delete.single.confirm',
+      name: principalLabel,
+      async onOk() {
+        await removeClusterAccess({
+          clusterId,
+          principal_type: record.principal_type,
+          principal_id: record.principal_id
+        });
+        message.success(intl.formatMessage({ id: 'common.message.success' }));
+        fetchAccess();
+      }
+    });
   };
 
   const columns = useMemo(
@@ -140,28 +120,20 @@ const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
         key: 'op',
         width: 120,
         render: (_t: any, record: ClusterAccess) => (
-          <Popconfirm
-            title={intl.formatMessage({ id: 'common.delete.tips' })}
-            okText={intl.formatMessage({ id: 'common.button.confirm' })}
-            cancelText={intl.formatMessage({ id: 'common.button.cancel' })}
-            onConfirm={() => handleRemove(record)}
+          <Button
+            danger
+            size="small"
+            type="text"
+            icon={<DeleteOutlined />}
+            onClick={() => handleRemove(record)}
           >
-            <Button danger size="small" type="text">
-              {intl.formatMessage({ id: 'common.button.remove' })}
-            </Button>
-          </Popconfirm>
+            {intl.formatMessage({ id: 'common.button.delete' })}
+          </Button>
         )
       }
     ],
     [intl]
   );
-
-  const principalOptions =
-    principalType === 'org'
-      ? orgs.map((o) => ({ value: o.id, label: o.name }))
-      : principalType === 'user'
-        ? users.map((u) => ({ value: u.id, label: u.username }))
-        : groups.map((g) => ({ value: g.id, label: g.name }));
 
   return (
     <div style={{ padding: '16px 0' }}>
@@ -232,24 +204,25 @@ const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
           </Form.Item>
           {principalType === 'group' && (
             <Form.Item name="organization_id" rules={[{ required: true }]}>
-              <Select
+              <PrincipalSelect
+                kind="org"
                 placeholder={intl.formatMessage({
                   id: 'organizations.groups.selectOrg'
                 })}
                 style={{ width: 200 }}
-                options={orgs.map((o) => ({ value: o.id, label: o.name }))}
               />
             </Form.Item>
           )}
           <Form.Item name="principal_id" rules={[{ required: true }]}>
-            <Select
-              showSearch
-              optionFilterProp="label"
-              style={{ width: 240 }}
+            <PrincipalSelect
+              kind={principalType as any}
+              orgId={
+                principalType === 'group' ? (orgIdForGroup ?? null) : undefined
+              }
               placeholder={intl.formatMessage({
                 id: 'organizations.access.principal'
               })}
-              options={principalOptions}
+              style={{ width: 240 }}
             />
           </Form.Item>
           <Form.Item>
@@ -280,6 +253,7 @@ const ClusterAccessTab: React.FC<Props> = ({ clusterId }) => {
           emptyText: intl.formatMessage({ id: 'organizations.access.empty' })
         }}
       />
+      <DeleteModal ref={modalRef}></DeleteModal>
     </div>
   );
 };

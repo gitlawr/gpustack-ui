@@ -81,3 +81,33 @@ export const calcTotalVram = (record: any) => {
   );
   return vramInMain + vramInDistributed;
 };
+
+// Pick the deploy form's initial cluster from the user's accessible
+// list. Each Org has at most one cluster with `is_default=true`, so the
+// fallback chain is: current Org's default → platform Org's default →
+// list[0]. Admin in "All" mode (no `currentOrgId`) skips straight to
+// the platform Org default — admin's home is Default.
+export const pickDefaultClusterId = <
+  T extends {
+    value: number | string;
+    is_default?: boolean;
+    organization_id?: number | null;
+  }
+>(
+  list: T[],
+  currentOrgId: number | null | undefined,
+  platformOrgId: number | null | undefined
+): T['value'] | undefined => {
+  if (!list?.length) return undefined;
+  const inOrg =
+    currentOrgId != null
+      ? list.find((c) => c.is_default && c.organization_id === currentOrgId)
+      : undefined;
+  if (inOrg) return inOrg.value;
+  const platform =
+    platformOrgId != null
+      ? list.find((c) => c.is_default && c.organization_id === platformOrgId)
+      : undefined;
+  if (platform) return platform.value;
+  return list[0]?.value;
+};

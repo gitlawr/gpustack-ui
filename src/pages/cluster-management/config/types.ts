@@ -89,6 +89,7 @@ export interface ClusterListItem {
   state_message: string;
   worker_pools: NodePoolListItem[];
   k8s_volume_mounts?: VolumeMount[];
+  organization_id?: number | null;
 }
 
 export interface ClusterFormData {
@@ -103,7 +104,6 @@ export interface ClusterFormData {
   worker_config?: Record<string, any>;
   worker_pools?: NodePoolFormData[];
   k8s_volume_mounts?: VolumeMount[];
-  // null = global (admin only); non-null = owned by that Org.
   organization_id?: number | null;
 }
 

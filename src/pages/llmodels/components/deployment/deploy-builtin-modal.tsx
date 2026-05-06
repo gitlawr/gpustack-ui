@@ -1,9 +1,14 @@
+import {
+  currentOrganizationIdAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { PageActionType } from '@/config/types';
 import { createAxiosToken } from '@/hooks/use-chunk-request';
 import { ClusterStatusValueMap } from '@/pages/cluster-management/config';
 import { ColumnWrapper, GSDrawer, ModalFooter } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Button, message } from 'antd';
+import { useAtomValue } from 'jotai';
 import _ from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
@@ -20,7 +25,7 @@ import { backendOptionsMap } from '../../constants/backend-parameters';
 import DataForm from '../../forms';
 import { useCheckCompatibility } from '../../hooks';
 import useFormInitialValues from '../../hooks/use-form-initial-values';
-import { generateGPUIds } from '../../utils';
+import { generateGPUIds, pickDefaultClusterId } from '../../utils';
 import CompatibilityAlert from '../compatible-alert';
 
 const ModesMap: Record<string, string> = {
@@ -193,11 +198,22 @@ const AddModal: React.FC<AddModalProps> = (props) => {
     handleCheckFormData();
   };
 
+  const currentOrgId = useAtomValue(currentOrganizationIdAtom);
+  const orgList = useAtomValue(organizationListAtom);
+  const platformOrgId = useMemo(
+    () => orgList.find((o) => o.is_platform)?.id ?? null,
+    [orgList]
+  );
+
   const initClusterId = (): number => {
-    const defaultCluster = clusterList?.find((item) => item.is_default);
-    if (defaultCluster) {
-      return defaultCluster.value;
-    }
+    // Per-Org default chain: current Org → platform Org → first Ready
+    // → first item.
+    const orgDefault = pickDefaultClusterId(
+      clusterList || [],
+      currentOrgId,
+      platformOrgId
+    );
+    if (orgDefault != null) return orgDefault as number;
     const cluster_id =
       clusterList?.find((item) => item.state === ClusterStatusValueMap.Ready)
         ?.value || clusterList?.[0]?.value;

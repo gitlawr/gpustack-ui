@@ -1,7 +1,12 @@
 import { history, useIntl } from '@umijs/max';
 import { Button, Result } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PageContainerInner } from '../pages/_components/page-box';
+
+// Always-accessible fallback for users whose current route became
+// unaccessible (e.g. after an Org switch flipped their access flags).
+// Playground has no access guard so it's safe for every role.
+const FALLBACK_PATH = '/playground/chat';
 
 const Exception: React.FC<{
   children: React.ReactNode;
@@ -12,8 +17,23 @@ const Exception: React.FC<{
   noFound?: React.ReactNode;
 }> = (props) => {
   const intl = useIntl();
-  // render custom 404
-  console.log('exception====', props);
+  const unaccessible = !!props.route?.unaccessible;
+  const willRedirect =
+    unaccessible && history.location.pathname !== FALLBACK_PATH;
+
+  useEffect(() => {
+    if (willRedirect) {
+      history.replace(FALLBACK_PATH);
+    }
+  }, [willRedirect]);
+
+  // Suppress the 403 panel for one frame while the effect navigates
+  // away — otherwise users see a 403 flash on org switch before the
+  // redirect resolves.
+  if (willRedirect) {
+    return null;
+  }
+
   return (
     (!props.route && (props.noFound || props.notFound)) ||
     // render custom 403

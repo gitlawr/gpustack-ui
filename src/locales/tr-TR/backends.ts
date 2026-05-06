@@ -45,5 +45,6 @@ export default {
   'backend.add.community': 'Topluluk',
   'backend.community.title': 'Topluluk Altyapı Pazaryeri',
   'backend.form.add.hint':
-    'Yerleşik bir altyapının (örn., vLLM, SGLang, MindIE) farklı sürümünü kullanmak için özel altyapı eklemek yerine mevcut altyapıya yeni sürüm ekleyin.'
+    'Yerleşik bir altyapının (örn., vLLM, SGLang, MindIE) farklı sürümünü kullanmak için özel altyapı eklemek yerine mevcut altyapıya yeni sürüm ekleyin.',
+  'backend.form.organization.platform': 'Global (shared with all organizations)'
 };

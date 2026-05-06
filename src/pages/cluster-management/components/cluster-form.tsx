@@ -1,7 +1,4 @@
-import {
-  currentOrganizationAtom,
-  organizationListAtom
-} from '@/atoms/organization';
+import { currentOrganizationIdAtom } from '@/atoms/organization';
 import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
 import { json2Yaml, yaml2Json } from '@/pages/backends/config';
@@ -44,39 +41,49 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
     const intl = useIntl();
     const [activeKey, setActiveKey] = React.useState<string[]>([]);
     const advanceConfigRef = React.useRef<any>(null);
-    const currentOrg = useAtomValue(currentOrganizationAtom);
-    const memberOrgList = useAtomValue(organizationListAtom);
+    // "All" mode = currentOrganizationIdAtom is null. The derived
+    // currentOrganizationAtom falls back to list[0] for UI display, so
+    // it can't be used as the "no context" probe — admin in "All"
+    // would still see a non-null Org there and the picker would hide.
+    const currentOrgId = useAtomValue(currentOrganizationIdAtom);
     const { initialState } = useModel('@@initialState') || {};
     const isAdmin = !!initialState?.currentUser?.is_admin;
+    // Picker is shown only when no Org context is active — i.e. admin
+    // in "All" mode. With a current Org (Org admin, or admin act-as)
+    // the form binds to that Org implicitly.
+    const showOrgPicker =
+      action === PageAction.CREATE && isAdmin && currentOrgId == null;
     const [adminOrgList, setAdminOrgList] = useState<
-      { id: number; name: string }[]
+      { id: number; name: string; is_platform?: boolean }[]
     >([]);
     useEffect(() => {
-      if (!isAdmin || action !== PageAction.CREATE) return;
+      if (!showOrgPicker) return;
       queryOrganizationsList({ page: -1 }).then((res: any) => {
         const items = res?.items || res || [];
-        setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
+        const list = items.map((o: any) => ({
+          id: o.id,
+          name: o.name,
+          is_platform: o.is_platform
+        }));
+        setAdminOrgList(list);
+        // Apply the default once the list arrives — Form.Item
+        // initialValue captures at mount, but the list is fetched
+        // async, so we have to seed the field after the fact (and
+        // skip if the user already picked something).
+        const defaultId =
+          list.find((o: any) => o.is_platform)?.id ?? list[0]?.id;
+        if (
+          defaultId != null &&
+          form.getFieldValue('organization_id') == null
+        ) {
+          form.setFieldValue('organization_id', defaultId);
+        }
       });
-    }, [isAdmin, action]);
-    // Admin: full dropdown (Global + every Org). Non-admin: pick from
-    // the team Orgs where the caller holds owner/manager — Personal
-    // Orgs and member-only Orgs are excluded since they can't own
-    // shared infra. With one matching Org the dropdown collapses to a
-    // single (still selectable) option.
-    const orgOptions = isAdmin
-      ? [
-          {
-            value: null as number | null,
-            label: intl.formatMessage({ id: 'clusters.form.owner.platform' })
-          },
-          ...adminOrgList.map((o) => ({ value: o.id, label: o.name }))
-        ]
-      : memberOrgList
-          .filter(
-            (o) =>
-              !o.is_personal && (o.role === 'owner' || o.role === 'manager')
-          )
-          .map((o) => ({ value: o.id, label: o.name }));
+    }, [showOrgPicker, form]);
+    const orgOptions = adminOrgList.map((o) => ({
+      value: o.id,
+      label: o.name
+    }));
 
     const handleOnCollapseChange = async (keys: string | string[]) => {
       setActiveKey(Array.isArray(keys) ? keys : [keys]);
@@ -218,29 +225,15 @@ const ClusterForm: React.FC<AddModalProps> = forwardRef(
             trim={false}
           ></CInput.Input>
         </Form.Item>
-        {action === PageAction.CREATE && (
-          // When the caller has no real choice (≤1 option), hide the
-          // dropdown — `initialValue` still flows through the form
-          // submission. Typical "hidden" cases:
-          //  - non-admin who's only in one team Org
-          //  - admin on a deployment without a Global option
-          // Admin with at least 2 options (Global + ≥1 Org) always sees
-          // the picker since the choice is meaningful.
+        {showOrgPicker && (
           <Form.Item<FormData>
             name="organization_id"
-            initialValue={
-              // Admin: follow current context — "All" mode → Global,
-              // Org context → that Org. Non-admin: their current Org id
-              // (which `access.ts` already guarantees is non-personal
-              // when they reach this form).
-              isAdmin ? (currentOrg?.id ?? null) : currentOrg?.id
-            }
-            rules={[{ required: false }]}
-            hidden={orgOptions.length <= 1}
+            rules={[{ required: true }]}
           >
             <SealSelect
-              label={intl.formatMessage({ id: 'clusters.form.owner' })}
+              label={intl.formatMessage({ id: 'clusters.form.organization' })}
               options={orgOptions as any}
+              required
             ></SealSelect>
           </Form.Item>
         )}

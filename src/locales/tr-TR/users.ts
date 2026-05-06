@@ -16,6 +16,10 @@ export default {
   'users.table.user': 'kullanıcılar',
   'users.form.admin': 'Yönetici',
   'users.form.user': 'Kullanıcı',
+  'users.form.admin.help':
+    'Platform superuser; can manage every organization and platform-wide settings.',
+  'users.form.user.help':
+    'Regular user; gets a Personal Org and only sees organizations they have been added to.',
   'users.form.newpassword': 'Yeni Şifre',
   'users.form.currentpassword': 'Mevcut Şifre',
   'users.form.updatepassword': 'Şifreyi Değiştir',

@@ -7,13 +7,7 @@ import { useAtom } from 'jotai';
 import _ from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import {
-  createCluster,
-  queryClusterList,
-  queryClusterToken,
-  queryCredentialList,
-  setDefaultCluster
-} from './apis';
+import { createCluster, queryClusterToken, queryCredentialList } from './apis';
 import {
   DockerStepsFromCluster,
   K8sStepsFromCluter
@@ -280,26 +274,14 @@ const ClusterCreate: React.FC<{
     return step?.showButtons ? step?.showButtons(extraData.provider) : {};
   }, [currentStep, steps, extraData.provider]);
 
-  const checkDefaultCluster = async () => {
-    try {
-      const res = await queryClusterList({ page: 1, perPage: 10 });
-      if (res.items.length === 1) {
-        const cluster = res.items[0];
-        if (!cluster.is_default) {
-          await setDefaultCluster({
-            id: cluster.id
-          });
-        }
-      }
-    } catch (error) {}
-  };
-
   const submit = async (values: ClusterFormData) => {
     const data = {
       ...extraData,
       ...(typeof values === 'object' ? values : {})
     };
     setSubmitLoading(true);
+    // Server promotes the first cluster in an Org to that Org's default
+    // automatically — no separate set-default round trip needed.
     const res = await createCluster({ data });
     const info = await queryClusterToken({ id: res.id });
     setSubmitLoading(false);
@@ -307,7 +289,6 @@ const ClusterCreate: React.FC<{
       ...info,
       cluster_id: res.id
     });
-    checkDefaultCluster();
     if (extraData.provider === ProviderValueMap.DigitalOcean) {
       onClose?.();
     }

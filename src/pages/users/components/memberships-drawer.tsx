@@ -7,7 +7,7 @@ import {
   removeOrganizationMember,
   updateOrganizationMember
 } from '@/services/organizations/apis';
-import { CloseOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { GSDrawer, IconFont } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
@@ -31,8 +31,7 @@ type Props = {
 };
 
 const roleColor = (role: string) => {
-  if (role === 'owner') return 'gold';
-  if (role === 'manager') return 'geekblue';
+  if (role === 'admin') return 'geekblue';
   return 'default';
 };
 
@@ -189,8 +188,8 @@ const MembershipsDrawer: React.FC<Props> = ({ open, user, onClose }) => {
           cancelText={intl.formatMessage({ id: 'common.button.cancel' })}
           onConfirm={() => handleRemove(record)}
         >
-          <Button type="text" danger icon={<CloseOutlined />} size="small">
-            {intl.formatMessage({ id: 'common.button.remove' })}
+          <Button type="text" danger icon={<DeleteOutlined />} size="small">
+            {intl.formatMessage({ id: 'common.button.delete' })}
           </Button>
         </Popconfirm>
       )
@@ -219,7 +218,7 @@ const MembershipsDrawer: React.FC<Props> = ({ open, user, onClose }) => {
             marginBottom: 16
           }}
         >
-          <Tag color={roleColor('member')}>
+          <Tag color={roleColor('user')}>
             {intl.formatMessage(
               { id: 'users.memberships.count' },
               { count: memberships.length }
@@ -240,7 +239,7 @@ const MembershipsDrawer: React.FC<Props> = ({ open, user, onClose }) => {
           <Form
             form={form}
             layout="inline"
-            initialValues={{ role: 'member' }}
+            initialValues={{ role: 'user' }}
             style={{
               marginBottom: 16,
               padding: 12,

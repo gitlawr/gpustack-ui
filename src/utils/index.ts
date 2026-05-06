@@ -359,3 +359,16 @@ export function formatOrdinal(n: number): string {
   const rule = enOrdinalRules.select(n);
   return `${n}${suffixMap[rule]}`;
 }
+
+// The model name clients should send as `model` in inference requests.
+// Mirrors the backend's `effective_route_name` helper:
+//   - Platform Org (is_platform=true) → unchanged (backward compat)
+//   - Other Orgs → `<org-slug>/<name>` so two Orgs can use the same
+//     route name without colliding in the gateway's AI proxy match.
+export function effectiveRouteName(
+  routeName: string,
+  org?: { slug?: string | null; is_platform?: boolean | null } | null
+): string {
+  if (!org || org.is_platform || !org.slug) return routeName;
+  return `${org.slug}/${routeName}`;
+}

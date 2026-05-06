@@ -1,4 +1,8 @@
 import { getRequestId } from '@/atoms/models';
+import {
+  currentOrganizationIdAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { PageActionType } from '@/config/types';
 import useDeferredRequest from '@/hooks/use-deferred-request';
 import { ClusterStatusValueMap } from '@/pages/cluster-management/config';
@@ -6,6 +10,7 @@ import { GSDrawer, ModalFooter } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
 import { Button } from 'antd';
+import { useAtomValue } from 'jotai';
 import _ from 'lodash';
 import { FC, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
@@ -25,6 +30,7 @@ import {
   WarningStausOptions
 } from '../../hooks';
 import useCheckBackend from '../../hooks/use-check-backend';
+import { pickDefaultClusterId } from '../../utils';
 import CompatibilityAlert from '../compatible-alert';
 import HFModelFile from '../model-source/hf-model-file';
 import ModelCard from '../model-source/model-card';
@@ -78,7 +84,12 @@ type AddModalProps = {
   deploymentType?: 'modelList' | 'modelFiles';
   clusterList: Global.BaseOption<
     number,
-    { provider: string; state: string | number; is_default: boolean }
+    {
+      provider: string;
+      state: string | number;
+      is_default: boolean;
+      organization_id?: number | null;
+    }
   >[];
   onOk: (values: FormData) => void;
   onCancel: () => void;
@@ -453,21 +464,30 @@ const AddModal: FC<AddModalProps> = (props) => {
     onCancel?.();
   });
 
+  const currentOrgId = useAtomValue(currentOrganizationIdAtom);
+  const orgList = useAtomValue(organizationListAtom);
+  const platformOrgId = useMemo(
+    () => orgList.find((o) => o.is_platform)?.id ?? null,
+    [orgList]
+  );
+
   const initClusterId = () => {
     if (initialValues?.cluster_id) {
       return initialValues.cluster_id;
     }
-    // Find default cluster
-    const defaultCluster = clusterList?.find((item) => item.is_default);
-    if (defaultCluster) {
-      return defaultCluster.value;
-    }
-
-    const cluster_id =
+    // Per-Org default: each Org has at most one is_default cluster.
+    // Fall back to the platform Org's default, then any Ready cluster,
+    // then the first item in the list.
+    const orgDefault = pickDefaultClusterId(
+      clusterList || [],
+      currentOrgId,
+      platformOrgId
+    );
+    if (orgDefault != null) return orgDefault;
+    return (
       clusterList?.find((item) => item.state === ClusterStatusValueMap.Ready)
-        ?.value || clusterList?.[0]?.value;
-
-    return cluster_id;
+        ?.value || clusterList?.[0]?.value
+    );
   };
 
   const handleOnOpen = async () => {

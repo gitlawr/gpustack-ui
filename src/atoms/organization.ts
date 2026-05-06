@@ -16,12 +16,14 @@ export interface Organization {
 export interface OrganizationMembership {
   user_id: number;
   organization_id: number;
-  role: 'owner' | 'manager' | 'member';
+  role: 'admin' | 'user';
   created_at?: string;
 }
 
+export type OrgRole = 'admin' | 'user';
+
 export interface OrganizationListItem extends Organization {
-  role?: 'owner' | 'manager' | 'member';
+  role?: OrgRole;
 }
 
 export const currentOrganizationIdAtom = atomWithStorage<number | null>(

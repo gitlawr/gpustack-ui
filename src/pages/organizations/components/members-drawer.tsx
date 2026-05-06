@@ -1,5 +1,4 @@
-import { queryUsersList } from '@/pages/users/apis';
-import { ListItem as UserItem } from '@/pages/users/config/types';
+import PrincipalSelect from '@/components/principal-select';
 import {
   addOrganizationMember,
   OrganizationMember,
@@ -7,7 +6,7 @@ import {
   removeOrganizationMember,
   updateOrganizationMember
 } from '@/services/organizations/apis';
-import { CloseOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { GSDrawer, IconFont } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { useMemoizedFn } from 'ahooks';
@@ -19,9 +18,10 @@ import {
   Select,
   Space,
   Table,
-  Tag
+  Tag,
+  Tooltip
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { OrganizationListItem, OrganizationRoleOptions } from '../config/types';
 
 type Props = {
@@ -31,8 +31,7 @@ type Props = {
 };
 
 const roleColor = (role: string) => {
-  if (role === 'owner') return 'gold';
-  if (role === 'manager') return 'geekblue';
+  if (role === 'admin') return 'geekblue';
   return 'default';
 };
 
@@ -41,8 +40,34 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
-  const [users, setUsers] = useState<UserItem[]>([]);
   const [form] = Form.useForm<{ user_id: number; role: string }>();
+
+  // Shared option list + dropdown renderer for both the inline column
+  // editor and the add-member form. Hovering an option surfaces a
+  // tooltip describing the role's scope so the difference between
+  // Admin and User (Org-scoped, distinct from platform `is_admin`)
+  // is discoverable without cluttering the dropdown.
+  const roleOptions = OrganizationRoleOptions.map((opt) => ({
+    value: opt.value,
+    label: intl.formatMessage({ id: opt.label }),
+    helpKey: `organizations.role.${opt.value}.help`
+  }));
+  const renderRoleOption = (oriOption: any) => {
+    const labelText = oriOption.data?.label ?? oriOption.label;
+    const help = oriOption?.data?.helpKey
+      ? intl.formatMessage({ id: oriOption.data.helpKey })
+      : null;
+    if (!help) {
+      return <span>{labelText}</span>;
+    }
+    return (
+      <Tooltip title={help} placement="right" mouseEnterDelay={0.2}>
+        {/* span fills the option row so hover anywhere on the row
+            triggers the tooltip, not just on the text. */}
+        <span style={{ display: 'block', width: '100%' }}>{labelText}</span>
+      </Tooltip>
+    );
+  };
 
   const fetchMembers = useMemoizedFn(async () => {
     if (!organization) return;
@@ -56,33 +81,17 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
     }
   });
 
-  const fetchUsers = useMemoizedFn(async () => {
-    try {
-      const res = await queryUsersList({ page: -1 });
-      setUsers((res as any)?.items || (res as any) || []);
-    } catch (_) {
-      setUsers([]);
-    }
-  });
-
-  // Enrich members with username/full_name resolved from the user list.
-  const enrichedMembers: OrganizationMember[] = members.map((m) => {
-    const user = users.find((u) => u.id === m.user_id);
-    return {
-      ...m,
-      username: m.username ?? user?.username,
-      full_name: m.full_name ?? user?.full_name
-    } as OrganizationMember;
-  });
+  // Server enriches each member with username + full_name, so no
+  // need to pull the full users list here.
+  const enrichedMembers: OrganizationMember[] = members;
 
   useEffect(() => {
     if (open && organization) {
       fetchMembers();
-      fetchUsers();
       setAdding(false);
       form.resetFields();
     }
-  }, [open, organization, fetchMembers, fetchUsers, form]);
+  }, [open, organization, fetchMembers, form]);
 
   const handleAdd = async () => {
     if (!organization) return;
@@ -130,9 +139,9 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
     }
   };
 
-  const memberUserIds = new Set(members.map((m) => m.user_id));
-  const candidateUsers = users.filter(
-    (u) => !memberUserIds.has(u.id) && u.is_active
+  const memberUserIds = useMemo(
+    () => new Set(members.map((m) => m.user_id)),
+    [members]
   );
 
   const columns = [
@@ -161,10 +170,8 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
         <Select
           value={record.role}
           style={{ width: 140 }}
-          options={OrganizationRoleOptions.map((opt) => ({
-            value: opt.value,
-            label: intl.formatMessage({ id: opt.label })
-          }))}
+          options={roleOptions}
+          optionRender={renderRoleOption}
           onChange={(val) => handleRoleChange(record, val)}
           variant="borderless"
         />
@@ -183,8 +190,8 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
           cancelText={intl.formatMessage({ id: 'common.button.cancel' })}
           onConfirm={() => handleRemove(record)}
         >
-          <Button type="text" danger icon={<CloseOutlined />} size="small">
-            {intl.formatMessage({ id: 'common.button.remove' })}
+          <Button type="text" danger icon={<DeleteOutlined />} size="small">
+            {intl.formatMessage({ id: 'common.button.delete' })}
           </Button>
         </Popconfirm>
       )
@@ -226,7 +233,6 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setAdding(true)}
-              disabled={candidateUsers.length === 0}
             >
               {intl.formatMessage({ id: 'organizations.members.add' })}
             </Button>
@@ -236,7 +242,7 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
           <Form
             form={form}
             layout="inline"
-            initialValues={{ role: 'member' }}
+            initialValues={{ role: 'user' }}
             style={{
               marginBottom: 16,
               padding: 12,
@@ -249,26 +255,20 @@ const MembersDrawer: React.FC<Props> = ({ open, organization, onClose }) => {
               rules={[{ required: true }]}
               style={{ flex: 1, marginRight: 8 }}
             >
-              <Select
-                showSearch
+              <PrincipalSelect
+                kind="user"
                 placeholder={intl.formatMessage({
                   id: 'organizations.members.selectUser'
                 })}
                 style={{ width: 240 }}
-                optionFilterProp="label"
-                options={candidateUsers.map((u) => ({
-                  value: u.id,
-                  label: `${u.username}${u.full_name ? ' / ' + u.full_name : ''}`
-                }))}
+                filter={(opt) => !memberUserIds.has(opt.value)}
               />
             </Form.Item>
             <Form.Item name="role" rules={[{ required: true }]}>
               <Select
                 style={{ width: 140 }}
-                options={OrganizationRoleOptions.map((opt) => ({
-                  value: opt.value,
-                  label: intl.formatMessage({ id: opt.label })
-                }))}
+                options={roleOptions}
+                optionRender={renderRoleOption}
               />
             </Form.Item>
             <Form.Item>

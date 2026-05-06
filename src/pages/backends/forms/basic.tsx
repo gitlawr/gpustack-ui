@@ -1,17 +1,27 @@
+import { currentOrganizationIdAtom } from '@/atoms/organization';
 import { PageAction } from '@/config';
+import { queryOrganizationsList } from '@/services/organizations/apis';
+import { useModel } from '@@/plugin-model';
 import {
   Input as CInput,
   LabelSelector,
   ListInput,
+  Select as SealSelect,
   Textarea as SealTextArea,
   useAppUtils
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Form } from 'antd';
-import { useEffect } from 'react';
+import { useAtomValue } from 'jotai';
+import { useEffect, useState } from 'react';
 import { BackendSourceValueMap } from '../config';
 import { useFormContext } from '../config/form-context';
 import { FormData } from '../config/types';
+
+// Sentinel for the "Platform" (Global, organization_id = NULL) option.
+// Antd Select doesn't represent null cleanly so we map it through this
+// constant on render and unwrap it on submit.
+const PLATFORM_VALUE = '__platform__';
 
 const BasicForm = () => {
   const form = Form.useFormInstance();
@@ -19,6 +29,19 @@ const BasicForm = () => {
   const { getRuleMessage } = useAppUtils();
   const { action, backendSource } = useFormContext();
   const defaultEnvs = Form.useWatch('default_env', form);
+  const { initialState } = useModel('@@initialState') || {};
+  const isAdmin = !!initialState?.currentUser?.is_admin;
+  const currentOrgId = useAtomValue(currentOrganizationIdAtom);
+  // Picker only shows for admin in "All" mode — same rule as cluster /
+  // cloud credential. With a current Org context the form binds to that
+  // Org implicitly. Backend keeps a Hybrid model so the picker also has
+  // a "Global" sentinel for admin's catalog-level rows; admin who wants
+  // to create a Global backend switches to "All" first.
+  const showOrgPicker =
+    isAdmin && action === PageAction.CREATE && currentOrgId == null;
+  const [adminOrgList, setAdminOrgList] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   const handleEnviromentVarsChange = (labels: Record<string, any>) => {
     form.setFieldValue('default_env', labels);
@@ -29,6 +52,32 @@ const BasicForm = () => {
       form.setFieldValue('backend_source', BackendSourceValueMap.CUSTOM);
     }
   }, [action]);
+
+  useEffect(() => {
+    if (!showOrgPicker) return;
+    queryOrganizationsList({ page: -1 }).then((res: any) => {
+      const items = res?.items || res || [];
+      setAdminOrgList(items.map((o: any) => ({ id: o.id, name: o.name })));
+    });
+    // "All" mode default = Global (catalog scope). User can flip to a
+    // specific Org from the dropdown if they want to drop a row into
+    // that Org instead. Skip if user already touched the field.
+    if (form.getFieldValue('organization_id_picker') == null) {
+      form.setFieldValue('organization_id_picker', PLATFORM_VALUE);
+    }
+  }, [showOrgPicker]);
+
+  const orgOptions = [
+    {
+      // Use a distinct, descriptive label so admins don't mistake this
+      // entry for an Org literally named "Platform" / "Global". The
+      // bracketed prefix is the cheap visual cue that this is a
+      // catalog-scope sentinel, not an organization name.
+      value: PLATFORM_VALUE,
+      label: intl.formatMessage({ id: 'backend.form.organization.platform' })
+    },
+    ...adminOrgList.map((o) => ({ value: o.id, label: o.name }))
+  ];
 
   return (
     <>
@@ -54,6 +103,15 @@ const BasicForm = () => {
       <Form.Item<FormData> hidden name="backend_source">
         <CInput.Input></CInput.Input>
       </Form.Item>
+      {showOrgPicker && (
+        <Form.Item name="organization_id_picker" rules={[{ required: true }]}>
+          <SealSelect
+            label={intl.formatMessage({ id: 'clusters.form.organization' })}
+            options={orgOptions}
+            required
+          ></SealSelect>
+        </Form.Item>
+      )}
       {backendSource !== BackendSourceValueMap.BUILTIN && (
         <>
           <Form.Item<FormData>

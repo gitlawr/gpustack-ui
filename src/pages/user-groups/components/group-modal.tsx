@@ -2,17 +2,25 @@ import { PageAction } from '@/config';
 import { PageActionType } from '@/config/types';
 import FormDrawer from '@/pages/_components/form-drawer';
 import { UserGroup, UserGroupFormData } from '@/services/organizations/apis';
-import { Input as CInput } from '@gpustack/core-ui';
+import { Input as CInput, Select as SealSelect } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Form } from 'antd';
 import { useEffect } from 'react';
+
+type OrgOption = { id: number; name: string; is_platform?: boolean };
 
 type Props = {
   open: boolean;
   action: PageActionType;
   title: string;
   data?: UserGroup | null;
-  onOk: (values: UserGroupFormData) => void;
+  // Admin-in-"All" gets to pick which Org to drop the group into; for
+  // any other context the page binds the create call to the current
+  // Org switcher value implicitly.
+  showOrgPicker?: boolean;
+  orgOptions?: OrgOption[];
+  defaultOrgId?: number | null;
+  onOk: (values: UserGroupFormData & { organization_id?: number }) => void;
   onCancel: () => void;
 };
 
@@ -21,11 +29,17 @@ const GroupModal: React.FC<Props> = ({
   action,
   title,
   data,
+  showOrgPicker,
+  orgOptions = [],
+  defaultOrgId,
   onOk,
   onCancel
 }) => {
   const intl = useIntl();
-  const [form] = Form.useForm<UserGroupFormData>();
+  const [form] = Form.useForm<
+    UserGroupFormData & { organization_id?: number }
+  >();
+  const showPicker = !!showOrgPicker && action === PageAction.CREATE;
 
   useEffect(() => {
     if (!open) {
@@ -37,8 +51,10 @@ const GroupModal: React.FC<Props> = ({
         name: data.name,
         description: data.description
       });
+    } else if (showPicker && defaultOrgId != null) {
+      form.setFieldsValue({ organization_id: defaultOrgId });
     }
-  }, [open, action, data, form]);
+  }, [open, action, data, form, showPicker, defaultOrgId]);
 
   return (
     <FormDrawer
@@ -66,6 +82,20 @@ const GroupModal: React.FC<Props> = ({
             required
           />
         </Form.Item>
+        {/* Organization picker placed under Name to match cluster /
+            credential forms — admin-in-"All" only. */}
+        {showPicker && (
+          <Form.Item name="organization_id" rules={[{ required: true }]}>
+            <SealSelect
+              label={intl.formatMessage({ id: 'clusters.form.organization' })}
+              options={orgOptions.map((o) => ({
+                value: o.id,
+                label: o.name
+              }))}
+              required
+            />
+          </Form.Item>
+        )}
         <Form.Item<UserGroupFormData>
           name="description"
           rules={[{ required: false }]}

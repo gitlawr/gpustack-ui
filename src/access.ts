@@ -43,7 +43,7 @@ export default (initialState: { currentUser?: Global.UserInfo }) => {
   };
 
   const ctx = readCurrentOrgContext();
-  const isOrgManagerHere = ctx.role === 'owner' || ctx.role === 'manager';
+  const isOrgAdminHere = ctx.role === 'admin';
 
   // Personal Org is a private workspace — admin / management menus hide
   // while switched into it. Switch back to a team Org (or "All" mode for
@@ -55,11 +55,10 @@ export default (initialState: { currentUser?: Global.UserInfo }) => {
   // (Workers / GPUs / ModelFiles), Cluster Management, and Access Control.
   // Visible when the caller has authority in the current context:
   //   - Platform admin in "All" mode or a team Org → yes
-  //   - Org owner/manager in a non-Personal Org → yes
+  //   - Org admin in a non-Personal Org → yes
   //   - Anyone in a Personal Org → no
   //   - Regular user → no
-  const canManageInfra =
-    !ctx.isPersonal && (isPlatformAdmin || isOrgManagerHere);
+  const canManageInfra = !ctx.isPersonal && (isPlatformAdmin || isOrgAdminHere);
 
   // User-facing pages (My Models) only show when the management view
   // isn't available — anyone who can see Deployments doesn't need the

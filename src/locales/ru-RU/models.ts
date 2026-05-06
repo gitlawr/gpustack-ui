@@ -207,6 +207,9 @@ export default {
     'напр., vllm serve Qwen/Qwen2.5-1.5B-Instruct',
   'models.accessSettings.public': 'Публичный',
   'models.accessSettings.authed': 'Аутентифицированный',
+  'models.accessSettings.org': 'Organization',
+  'models.accessSettings.org.tips':
+    "Visible only to members of the route's owning organization.",
   'models.accessSettings.allowedUsers': 'Разрешенные пользователи',
   'models.accessSettings.allowedPrincipals': 'Разрешённые принципалы',
   'models.accessSettings.allowedPrincipals.tips':

@@ -4,10 +4,20 @@ import FormDrawer from '@/pages/_components/form-drawer';
 import { Input as CInput } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import { Form } from 'antd';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { OrganizationFormData, OrganizationListItem } from '../config/types';
 
 const slugReg = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+
+// Best-effort name → slug derivation matching the backend rule
+// (^[a-z](?:[a-z0-9\-]*[a-z0-9])?$): lowercase, non-alnum → '-',
+// collapse, trim, drop leading non-letters so the slug starts with a-z.
+const slugify = (input: string): string =>
+  input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/^[^a-z]+/, '');
 
 type AddOrgModalProps = {
   open: boolean;
@@ -28,6 +38,10 @@ const AddOrganizationModal: React.FC<AddOrgModalProps> = ({
 }) => {
   const intl = useIntl();
   const [form] = Form.useForm<OrganizationFormData>();
+  // Once the user types in the slug field manually we stop deriving it
+  // from name — they're in control. Edit mode starts as "touched" so
+  // auto-fill never overwrites an existing slug.
+  const slugTouchedRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
@@ -40,8 +54,25 @@ const AddOrganizationModal: React.FC<AddOrgModalProps> = ({
         slug: data.slug,
         description: data.description
       });
+      slugTouchedRef.current = true;
+    } else {
+      slugTouchedRef.current = false;
     }
   }, [open, action, data, form]);
+
+  const handleValuesChange = (changed: Partial<OrganizationFormData>) => {
+    if ('slug' in changed) {
+      slugTouchedRef.current = true;
+      return;
+    }
+    if (
+      'name' in changed &&
+      action === PageAction.CREATE &&
+      !slugTouchedRef.current
+    ) {
+      form.setFieldValue('slug', slugify(changed.name || ''));
+    }
+  };
 
   const handleSubmit = () => {
     form.submit();
@@ -59,6 +90,7 @@ const AddOrganizationModal: React.FC<AddOrgModalProps> = ({
         name="addOrganizationForm"
         form={form}
         onFinish={onOk}
+        onValuesChange={handleValuesChange}
         preserve={false}
       >
         <Form.Item<OrganizationFormData>

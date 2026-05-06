@@ -1,6 +1,11 @@
 // columns.ts
+import {
+  allOrganizationsAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { tableSorter } from '@/config/settings';
 import ModelTag from '@/pages/_components/model-tag';
+import { effectiveRouteName } from '@/utils';
 import {
   AutoTooltip,
   DropdownButtons,
@@ -8,6 +13,7 @@ import {
 } from '@gpustack/core-ui';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
+import { useAtomValue } from 'jotai';
 import { useMemo } from 'react';
 import { rowActionList } from '../config';
 import { RouteItem } from '../config/types';
@@ -16,6 +22,19 @@ const useAccessColumns = (
   onCellClick?: (record: RouteItem, dataIndex: string) => void
 ): TableColumnProps[] => {
   const intl = useIntl();
+  const memberOrgs = useAtomValue(organizationListAtom);
+  const allOrgs = useAtomValue(allOrganizationsAtom);
+  // Lookup table for resolving each route's owning Org so the displayed
+  // name matches what the gateway routes on (Org slug-prefixed for
+  // non-platform Orgs).
+  const orgById = useMemo(() => {
+    const map = new Map<number, any>();
+    for (const o of allOrgs as any[]) map.set(o.id, o);
+    for (const o of memberOrgs as any[]) {
+      if (!map.has(o.id)) map.set(o.id, o);
+    }
+    return map;
+  }, [allOrgs, memberOrgs]);
 
   const filterActions = (record: RouteItem) => {
     return rowActionList.filter((action) => {
@@ -33,14 +52,21 @@ const useAccessColumns = (
         dataIndex: 'name',
         sorter: tableSorter(1),
         span: 5,
-        render: (text: string, record: RouteItem) => (
-          <span className="flex-center" style={{ maxWidth: '100%' }}>
-            <AutoTooltip ghost title={text}>
-              <span className="m-r-5 text-primary">{text}</span>
-            </AutoTooltip>
-            <ModelTag categoryKey={record.categories?.[0]}></ModelTag>
-          </span>
-        )
+        render: (text: string, record: RouteItem) => {
+          const owner =
+            (record as any).organization_id != null
+              ? orgById.get((record as any).organization_id)
+              : null;
+          const display = effectiveRouteName(text, owner);
+          return (
+            <span className="flex-center" style={{ maxWidth: '100%' }}>
+              <AutoTooltip ghost title={display}>
+                <span className="m-r-5 text-primary">{display}</span>
+              </AutoTooltip>
+              <ModelTag categoryKey={record.categories?.[0]}></ModelTag>
+            </span>
+          );
+        }
       },
       {
         title: intl.formatMessage({ id: 'routes.table.routeTargets' }),
@@ -75,7 +101,7 @@ const useAccessColumns = (
         )
       }
     ];
-  }, [handleSelect, onCellClick]);
+  }, [handleSelect, onCellClick, orgById]);
 };
 
 export default useAccessColumns;

@@ -1,3 +1,7 @@
+import {
+  allOrganizationsAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import { OPENAI_COMPATIBLE } from '@/config/settings';
 import {
   AUDIO_SPEECH_TO_TEXT_API,
@@ -8,6 +12,7 @@ import {
   MODEL_PROXY,
   RERANKER_API
 } from '@/pages/playground/apis';
+import { effectiveRouteName } from '@/utils';
 import { BulbOutlined } from '@ant-design/icons';
 import {
   AutoTooltip,
@@ -17,6 +22,7 @@ import {
 } from '@gpustack/core-ui';
 import { useIntl, useNavigate } from '@umijs/max';
 import { Button, Tag } from 'antd';
+import { useAtomValue } from 'jotai';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
@@ -98,6 +104,23 @@ const ApiAccessInfo = ({ open, data, onClose }: ApiAccessInfoProps) => {
   const intl = useIntl();
   const navigate = useNavigate();
   const { GenericProxyCommandCode, openProxyModal } = useGenericProxy();
+  const memberOrgs = useAtomValue(organizationListAtom);
+  const allOrgs = useAtomValue(allOrganizationsAtom);
+  // Resolve the deployment's owning Org so we can show the model name
+  // the gateway actually routes on (Org slug-prefixed for non-platform
+  // Orgs). allOrgs is admin-only; non-admin uses memberOrgs.
+  const ownerOrg = useMemo(() => {
+    if (data?.organization_id == null) return null;
+    return (
+      (allOrgs as any[]).find((o) => o.id === data.organization_id) ??
+      (memberOrgs as any[]).find((o) => o.id === data.organization_id) ??
+      null
+    );
+  }, [data?.organization_id, allOrgs, memberOrgs]);
+  const displayedModelName = useMemo(
+    () => effectiveRouteName(data?.name || '', ownerOrg as any),
+    [data?.name, ownerOrg]
+  );
 
   const endPoint = useMemo(() => {
     if (!data.generic_proxy) {
@@ -186,11 +209,15 @@ const ApiAccessInfo = ({ open, data, onClose }: ApiAccessInfoProps) => {
         </span>
         <span className="value">
           <AutoTooltip ghost maxWidth={300}>
-            {data.name}
+            {displayedModelName}
           </AutoTooltip>
         </span>
         <span className="copy-btn">
-          <CopyButton text={data.name} type="link" size="small"></CopyButton>
+          <CopyButton
+            text={displayedModelName}
+            type="link"
+            size="small"
+          ></CopyButton>
         </span>
         <span className="label">
           {intl.formatMessage({ id: 'models.table.apiAccessInfo.apikey' })}
