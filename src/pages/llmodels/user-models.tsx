@@ -1,4 +1,9 @@
+import {
+  allOrganizationsAtom,
+  organizationListAtom
+} from '@/atoms/organization';
 import useTableFetch from '@/hooks/use-table-fetch';
+import { effectiveRouteName } from '@/utils';
 import { SyncOutlined } from '@ant-design/icons';
 import {
   BaseSelect,
@@ -11,6 +16,7 @@ import {
 import { useIntl, useNavigate } from '@umijs/max';
 import useMemoizedFn from 'ahooks/lib/useMemoizedFn';
 import { Button, Input, Space } from 'antd';
+import { useAtomValue } from 'jotai';
 import React, { useCallback, useMemo } from 'react';
 import PageBox from '../_components/page-box';
 import { MY_MODELS_API, queryMyModels } from './apis';
@@ -46,6 +52,16 @@ const optionRender = (item: any) => {
 
 const UserModels: React.FC = () => {
   const navigate = useNavigate();
+  const memberOrgs = useAtomValue(organizationListAtom);
+  const allOrgs = useAtomValue(allOrganizationsAtom);
+  const orgById = useMemo(() => {
+    const map = new Map<number, any>();
+    for (const o of allOrgs as any[]) map.set(o.id, o);
+    for (const o of memberOrgs as any[]) {
+      if (!map.has(o.id)) map.set(o.id, o);
+    }
+    return map;
+  }, [allOrgs, memberOrgs]);
   const {
     dataSource,
     queryParams,
@@ -97,6 +113,11 @@ const UserModels: React.FC = () => {
   };
 
   const handleOnClick = (model: any) => {
+    const owner =
+      model?.organization_id != null
+        ? orgById.get(model.organization_id)
+        : null;
+    const modelName = encodeURIComponent(effectiveRouteName(model.name, owner));
     for (const [category, path] of Object.entries(categoryToPathMap)) {
       if (
         model.categories?.includes(category) &&
@@ -105,15 +126,15 @@ const UserModels: React.FC = () => {
           modelCategoriesMap.speech_to_text
         ].includes(category)
       ) {
-        navigate(`${path}&model=${model.name}`);
+        navigate(`${path}&model=${modelName}`);
         return;
       }
       if (model.categories?.includes(category)) {
-        navigate(`${path}?model=${model.name}`);
+        navigate(`${path}?model=${modelName}`);
         return;
       }
     }
-    navigate(`/playground/chat?model=${model.name}`);
+    navigate(`/playground/chat?model=${modelName}`);
   };
 
   const renderCard = (data: any) => {

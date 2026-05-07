@@ -1,4 +1,4 @@
-import { queryUsersList } from '@/pages/users/apis';
+import { queryUserDirectory } from '@/pages/users/apis';
 import {
   queryOrganizationsList,
   queryUserGroups
@@ -58,7 +58,7 @@ async function fetchOptions(
   const params: any = { page: 1, perPage: PAGE_SIZE };
   if (search) params.search = search;
   if (kind === 'user') {
-    const res: any = await queryUsersList(params);
+    const res: any = await queryUserDirectory(params);
     const items: any[] = res?.items || res || [];
     return items.map((u) => ({ value: u.id, label: u.username }));
   }

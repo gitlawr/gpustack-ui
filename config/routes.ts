@@ -276,11 +276,15 @@ export default [
     name: 'accessControl',
     path: '/access-control',
     key: 'accessControl',
-    access: 'canSeeAdmin',
+    // Parent gate widened to canManageInfra so Org admins can see the
+    // section header for the items they can act on (Members, User Groups).
+    // Each child still carries its own access flag — platform-only
+    // children stay invisible to Org admins.
+    access: 'canManageInfra',
     routes: [
       {
         path: '/access-control',
-        redirect: '/access-control/users'
+        redirect: '/access-control/members'
       },
       {
         name: 'organizations',
@@ -291,6 +295,16 @@ export default [
         defaultIcon: 'antd:ApartmentOutlined',
         access: 'canSeeAdmin',
         component: './organizations'
+      },
+      {
+        name: 'orgMembers',
+        path: '/access-control/members',
+        key: 'orgMembers',
+        icon: 'antd:TeamOutlined',
+        selectedIcon: 'antd:TeamOutlined',
+        defaultIcon: 'antd:TeamOutlined',
+        access: 'canManageOrgMembers',
+        component: './org-members'
       },
       {
         name: 'users',
@@ -309,7 +323,7 @@ export default [
         icon: 'icon-users',
         selectedIcon: 'icon-users-filled',
         defaultIcon: 'icon-users',
-        access: 'canSeeAdmin',
+        access: 'canManageInfra',
         component: './user-groups'
       }
     ]

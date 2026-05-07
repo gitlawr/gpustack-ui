@@ -26,6 +26,8 @@ export default {
   'organizations.groups.title': '用户组',
   'organizations.groups.create': '创建用户组',
   'organizations.groups.members.title': '用户组成员',
+  'organizations.groups.member.remove.confirm':
+    '确定将该用户从用户组中移除吗？',
   'organizations.groups.empty':
     '暂无用户组。创建用户组可在部门或团队内共享资源。',
   'organizations.groups.selectOrg': '选择组织',

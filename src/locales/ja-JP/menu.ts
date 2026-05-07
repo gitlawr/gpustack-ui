@@ -35,6 +35,7 @@ export default {
   'menu.accessControl.apikeys': 'API Keys',
   'menu.accessControl.users': 'Users',
   'menu.accessControl.organizations': 'Organizations',
+  'menu.accessControl.orgMembers': 'Members',
   'menu.accessControl.userGroups': 'User Groups',
   'menu.clusterManagement': 'Cluster Management',
   'menu.clusterManagement.clusters': 'Clusters',

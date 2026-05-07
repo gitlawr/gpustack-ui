@@ -31,6 +31,8 @@ export default {
   'organizations.groups.title': 'User Groups',
   'organizations.groups.create': 'Create User Group',
   'organizations.groups.members.title': 'Group Members',
+  'organizations.groups.member.remove.confirm':
+    'Remove this user from the group?',
   'organizations.groups.empty':
     'No groups yet. Create a group to share resources within a department or team.',
   'organizations.groups.selectOrg': 'Select organization',

@@ -30,6 +30,7 @@ export default {
   'menu.accessControl.apikeys': 'API Anahtarları',
   'menu.accessControl.users': 'Kullanıcılar',
   'menu.accessControl.organizations': 'Organizasyonlar',
+  'menu.accessControl.orgMembers': 'Members',
   'menu.accessControl.userGroups': 'Kullanıcı Grupları',
   'menu.profile': 'Profil',
   'menu.login': 'Giriş',

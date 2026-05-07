@@ -150,6 +150,19 @@ export const useInitLLmMeta = (
         searchParams.get('model') || model || modelList?.[0]?.value;
     }
 
+    // Stale URL (e.g. `?model=qwen3-0.6b` from before the Org-prefix
+    // rollout) or persisted params can carry a name that no longer
+    // appears in the list returned by `/v1/models`. Fall back to the
+    // first available option so the form's value matches a real option
+    // — otherwise the chat call sends a name Higress can't route and
+    // bombs with "Invalid model destination format: gpustack.static".
+    if (
+      defaultModel &&
+      !modelList.some((item) => item.value === defaultModel)
+    ) {
+      defaultModel = modelList[0]?.value;
+    }
+
     if (defaultModel && modelList.length && !initializedRef.current) {
       handleOnModelChange(defaultModel);
       initializedRef.current = true;

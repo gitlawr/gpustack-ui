@@ -22,6 +22,15 @@ export async function queryUsersList(params: Global.SearchParams) {
   });
 }
 
+// Slim user-search endpoint for member-add pickers. Accessible to org
+// admins (any) and platform admins; full /users is admin-only.
+export async function queryUserDirectory(params: Global.SearchParams) {
+  return request<Global.PageResponse<ListItem>>(`/user-directory`, {
+    method: 'GET',
+    params
+  });
+}
+
 export async function createUser(params: { data: FormData }) {
   return request(`${USERS_API}`, {
     method: 'POST',

@@ -227,41 +227,6 @@ export async function addGroupMember(params: {
   );
 }
 
-// Bulk-set helper: server only supports per-user POST/DELETE, so we diff
-// the desired set against current and issue parallel calls.
-export async function setGroupMembers(params: {
-  orgId: number;
-  groupId: number;
-  data: { user_ids: number[] };
-}) {
-  const current = await queryGroupMembers({
-    orgId: params.orgId,
-    groupId: params.groupId
-  });
-  const currentIds = new Set((current || []).map((m) => m.user_id));
-  const desiredIds = new Set(params.data.user_ids);
-
-  const toAdd = [...desiredIds].filter((id) => !currentIds.has(id));
-  const toRemove = [...currentIds].filter((id) => !desiredIds.has(id));
-
-  await Promise.all([
-    ...toAdd.map((user_id) =>
-      addGroupMember({
-        orgId: params.orgId,
-        groupId: params.groupId,
-        data: { user_id }
-      })
-    ),
-    ...toRemove.map((user_id) =>
-      removeGroupMember({
-        orgId: params.orgId,
-        groupId: params.groupId,
-        userId: user_id
-      })
-    )
-  ]);
-}
-
 export async function removeGroupMember(params: {
   orgId: number;
   groupId: number;

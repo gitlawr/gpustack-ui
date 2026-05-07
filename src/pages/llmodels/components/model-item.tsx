@@ -1,4 +1,9 @@
 import {
+  allOrganizationsAtom,
+  organizationListAtom
+} from '@/atoms/organization';
+import { effectiveRouteName } from '@/utils';
+import {
   IconFont,
   StatusTag,
   TagsWrapper,
@@ -7,6 +12,7 @@ import {
 } from '@gpustack/core-ui';
 import { useIntl, useNavigate } from '@umijs/max';
 import { Button } from 'antd';
+import { useAtomValue } from 'jotai';
 import _ from 'lodash';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
@@ -124,6 +130,23 @@ const ModelItem: React.FC<{
   const { model, onClick } = props;
   const intl = useIntl();
   const navigate = useNavigate();
+  const memberOrgs = useAtomValue(organizationListAtom);
+  const allOrgs = useAtomValue(allOrganizationsAtom);
+  // Resolve owner Org so the playground URL carries the slug-prefixed
+  // effective name that `/v1/models` exposes — passing the raw name
+  // ends up "selected" in the picker but doesn't match any option.
+  const ownerOrg = useMemo(() => {
+    const id = model?.organization_id;
+    if (id == null) return null;
+    return (
+      (allOrgs as any[]).find((o) => o.id === id) ??
+      (memberOrgs as any[]).find((o) => o.id === id) ??
+      null
+    );
+  }, [model?.organization_id, allOrgs, memberOrgs]);
+  const playgroundModelName = encodeURIComponent(
+    effectiveRouteName(model.name, ownerOrg as any)
+  );
 
   const handleOpenPlayGround = () => {
     for (const [category, path] of Object.entries(categoryToPathMap)) {
@@ -134,15 +157,15 @@ const ModelItem: React.FC<{
           modelCategoriesMap.speech_to_text
         ].includes(category)
       ) {
-        navigate(`${path}&model=${model.name}`);
+        navigate(`${path}&model=${playgroundModelName}`);
         return;
       }
       if (model.categories?.includes(category)) {
-        navigate(`${path}?model=${model.name}`);
+        navigate(`${path}?model=${playgroundModelName}`);
         return;
       }
     }
-    navigate(`/playground/chat?model=${model.name}`);
+    navigate(`/playground/chat?model=${playgroundModelName}`);
   };
 
   // context length

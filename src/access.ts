@@ -65,10 +65,16 @@ export default (initialState: { currentUser?: Global.UserInfo }) => {
   // separate "My Models" catalog entry.
   const canSeeUser = !canManageInfra;
 
+  // Members management is per-Org by nature — there is no meaningful
+  // "All" view, so the menu hides when platform admin hasn't picked an
+  // Org yet. Switching to any team Org reveals it.
+  const canManageOrgMembers = canManageInfra && !ctx.inAllMode;
+
   return {
     canSeeAdmin,
     canSeeUser,
     canManageInfra,
+    canManageOrgMembers,
     canDelete: true,
     canLogin: true
   };
