@@ -22,11 +22,13 @@ export interface LoginKit {
     options: {
       saml: boolean;
       oidc: boolean;
+      cas: boolean;
       first_time_setup: boolean;
       get_initial_password_command: string;
     };
     loginWithOIDC: () => void;
     loginWithSAML: () => void;
+    loginWithCAS: () => void;
   };
   userInfo: any;
   setUserInfo: (info: any) => void;

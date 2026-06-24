@@ -186,13 +186,15 @@ const LoginForm = () => {
       SSOAuth.loginWithOIDC();
     } else if (SSOAuth.options.saml) {
       SSOAuth.loginWithSAML();
+    } else if (SSOAuth.options.cas) {
+      SSOAuth.loginWithCAS();
     }
     setLoading(true);
     setAuthError(null);
   };
 
   const hasThirdPartyLogin = useMemo(() => {
-    return SSOAuth.options.oidc || SSOAuth.options.saml;
+    return SSOAuth.options.oidc || SSOAuth.options.saml || SSOAuth.options.cas;
   }, [SSOAuth.options]);
 
   const isThirdPartyAuthHandling = useMemo(() => {
@@ -221,6 +223,16 @@ const LoginForm = () => {
               {intl.formatMessage(
                 { id: 'common.external.login' },
                 { type: 'SSO' }
+              )}
+            </ButtonText>
+          </ButtonWrapper>
+        )}
+        {SSOAuth.options.cas && (
+          <ButtonWrapper onClick={SSOAuth.loginWithCAS}>
+            <ButtonText>
+              {intl.formatMessage(
+                { id: 'common.external.login' },
+                { type: 'CAS' }
               )}
             </ButtonText>
           </ButtonWrapper>

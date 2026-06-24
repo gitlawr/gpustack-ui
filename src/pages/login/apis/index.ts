@@ -11,6 +11,7 @@ export const AUTH_CONFIG_API = '/auth/config';
 
 export const AUTH_OIDC_LOGIN_API = '/auth/oidc/login';
 export const AUTH_SAML_LOGIN_API = '/auth/saml/login';
+export const AUTH_CAS_LOGIN_API = '/auth/cas/login';
 
 export const login = async (
   params: { username: string; password: string },
@@ -57,6 +58,7 @@ export const fetchAuthConfig = async () => {
   return request<{
     is_saml: boolean;
     is_oidc: boolean;
+    is_cas: boolean;
     first_time_setup: boolean;
     get_initial_password_command: string;
   }>(AUTH_CONFIG_API);
