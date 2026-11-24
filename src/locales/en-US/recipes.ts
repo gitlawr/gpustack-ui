@@ -1,0 +1,45 @@
+export default {
+  'models.recipe.title': 'Recipe',
+  'models.recipe.matchedBy.repo_id': 'matched by repository',
+  'models.recipe.matchedBy.fingerprint': 'identified from config.json',
+  'models.recipe.none': 'No recipe found for this model',
+  'models.recipe.choose': 'Choose a recipe',
+  'models.recipe.search': 'Search recipes',
+  'models.recipe.applied': 'Applied: {name}',
+  'models.recipe.backend': 'Inference Backend',
+  'models.recipe.variants': 'Configurations',
+  'models.recipe.noVariants':
+    "No configuration was written for this model's checkpoint.",
+  'models.recipe.fit.matched': 'Matches the cluster',
+  'models.recipe.fit.matched.tips':
+    'Deployable, on the card and card count this configuration was written for.',
+  'models.recipe.fit.compatible': 'Deployable',
+  'models.recipe.fit.compatible.tips':
+    'Deployable, on hardware this configuration was not written for.',
+  'models.recipe.fit.incompatible': 'Not deployable',
+  'models.recipe.fit.incompatible.tips': 'Cannot be deployed on this cluster.',
+  'models.recipe.verification.upstream-verified': 'Verified upstream',
+  'models.recipe.verification.upstream-supported': 'Supported upstream',
+  'models.recipe.verification.upstream-provided': 'Provided upstream',
+  'models.recipe.verification.gpustack-verified': 'Verified by GPUStack',
+  'models.recipe.features': 'Features',
+  'models.recipe.feature.hf':
+    'Downloads another model from Hugging Face at startup; the workers need access to huggingface.co.',
+  'models.recipe.notes': 'Notes',
+  'models.recipe.apply': 'Apply',
+  'models.recipe.apply.tips':
+    'Replaces the backend, version, parameters and environment variables in the form. The model source is kept.',
+  'models.recipe.from': 'From {source}',
+  'models.recipe.evaluating': 'Checking against the cluster...',
+  'models.recipe.gpus': '{label} × {count}',
+  'models.recipe.deploy': 'Deploy with this recipe',
+  'models.recipe.list.variants': '{count} configurations',
+  'models.recipe.list.released': 'Released {date}',
+  'models.recipe.list.filter.backend': 'Backend',
+  'models.recipe.list.filter.vendor': 'Vendor',
+  'models.recipe.list.search': 'Search by model name',
+  'models.recipe.detail.cluster': 'Check fit on cluster',
+  'models.recipe.detail.models': 'Checkpoints',
+  'models.recipe.detail.parameters': 'Parameters',
+  'models.recipe.detail.env': 'Environment Variables'
+};

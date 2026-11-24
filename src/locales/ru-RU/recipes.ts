@@ -1,0 +1,45 @@
+export default {
+  'models.recipe.title': 'Рецепт',
+  'models.recipe.matchedBy.repo_id': 'совпадение по репозиторию',
+  'models.recipe.matchedBy.fingerprint': 'определено по config.json',
+  'models.recipe.none': 'Рецепт для этой модели не найден',
+  'models.recipe.choose': 'Выбрать рецепт',
+  'models.recipe.search': 'Поиск рецептов',
+  'models.recipe.applied': 'Применено: {name}',
+  'models.recipe.backend': 'Бэкенд инференса',
+  'models.recipe.variants': 'Конфигурации',
+  'models.recipe.noVariants':
+    'Для этой контрольной точки модели нет конфигураций.',
+  'models.recipe.fit.matched': 'Соответствует кластеру',
+  'models.recipe.fit.matched.tips':
+    'Можно развернуть, в кластере есть карта и число карт, для которых написана конфигурация.',
+  'models.recipe.fit.compatible': 'Можно развернуть',
+  'models.recipe.fit.compatible.tips':
+    'Можно развернуть, но на оборудовании, для которого конфигурация не писалась.',
+  'models.recipe.fit.incompatible': 'Нельзя развернуть',
+  'models.recipe.fit.incompatible.tips': 'Нельзя развернуть в этом кластере.',
+  'models.recipe.verification.upstream-verified': 'Проверено в апстриме',
+  'models.recipe.verification.upstream-supported': 'Поддерживается в апстриме',
+  'models.recipe.verification.upstream-provided': 'Предоставлено апстримом',
+  'models.recipe.verification.gpustack-verified': 'Проверено GPUStack',
+  'models.recipe.features': 'Функции',
+  'models.recipe.feature.hf':
+    'При запуске скачивает другую модель с Hugging Face; воркерам нужен доступ к huggingface.co.',
+  'models.recipe.notes': 'Примечания',
+  'models.recipe.apply': 'Применить',
+  'models.recipe.apply.tips':
+    'Заменяет бэкенд, версию, параметры и переменные окружения в форме. Источник модели сохраняется.',
+  'models.recipe.from': 'Из {source}',
+  'models.recipe.evaluating': 'Проверка по кластеру...',
+  'models.recipe.gpus': '{label} × {count}',
+  'models.recipe.deploy': 'Развернуть по этому рецепту',
+  'models.recipe.list.variants': 'Конфигураций: {count}',
+  'models.recipe.list.released': 'Выпущена {date}',
+  'models.recipe.list.filter.backend': 'Бэкенд',
+  'models.recipe.list.filter.vendor': 'Производитель',
+  'models.recipe.list.search': 'Поиск по названию модели',
+  'models.recipe.detail.cluster': 'Кластер для проверки',
+  'models.recipe.detail.models': 'Контрольные точки',
+  'models.recipe.detail.parameters': 'Параметры',
+  'models.recipe.detail.env': 'Переменные окружения'
+};

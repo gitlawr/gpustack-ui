@@ -15,6 +15,7 @@ export default {
   'menu.models': '模型服务',
   'menu.models.modelList': '部署与管理',
   'menu.models.modelCatalog': '模型库',
+  'menu.models.recipes': '部署配方',
   'menu.models.deployment': '部署',
   'menu.models.userModels': '模型广场',
   'menu.models.benchmark': '基准测试',

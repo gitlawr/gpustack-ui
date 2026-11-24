@@ -15,6 +15,7 @@ export default {
   'menu.models': 'モデルサービス',
   'menu.models.modelList': 'デプロイと管理',
   'menu.models.modelCatalog': 'カタログ',
+  'menu.models.recipes': 'デプロイレシピ',
   'menu.models.catalog': 'モデルカタログ',
   'menu.models.deployment': 'デプロイ',
   'menu.models.benchmark': 'ベンチマーク',

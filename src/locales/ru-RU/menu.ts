@@ -15,6 +15,7 @@ export default {
   'menu.models': 'Сервисы моделей',
   'menu.models.modelList': 'Развертывание и управление',
   'menu.models.modelCatalog': 'Каталог',
+  'menu.models.recipes': 'Рецепты',
   'menu.models.catalog': 'Каталог моделей',
   'menu.models.deployment': 'Развёртывания',
   'menu.models.benchmark': 'Бенчмарки',

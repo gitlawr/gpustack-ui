@@ -15,6 +15,7 @@ export default {
   'menu.models': 'Model Hizmetleri',
   'menu.models.modelList': 'Dağıt ve Yönet',
   'menu.models.modelCatalog': 'Katalog',
+  'menu.models.recipes': 'Tarifler',
   'menu.models.catalog': 'Model Kataloğu',
   'menu.models.deployment': 'Dağıtımlar',
   'menu.models.userModels': 'Modeller',

@@ -15,6 +15,7 @@ export default {
   'menu.models': 'Model Service',
   'menu.models.modelList': 'Deploy & Manage',
   'menu.models.modelCatalog': 'Catalog',
+  'menu.models.recipes': 'Recipes',
   'menu.models.catalog': 'Model Catalog',
   'menu.models.deployment': 'Deployments',
   'menu.models.userModels': 'Models',

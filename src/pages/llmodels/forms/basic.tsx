@@ -14,6 +14,7 @@ import {
 import { useIntl } from '@umijs/max';
 import { Form } from 'antd';
 import { useEffect, useMemo } from 'react';
+import RecipeEntry from '../components/recipe/recipe-entry';
 import { DeployFormKeyMap, sourceOptions } from '../config';
 import { useFormContext } from '../config/form-context';
 import { ClusterOption, FormData } from '../config/types';
@@ -291,6 +292,9 @@ const BasicForm: React.FC<BasicFormProps> = (props) => {
       </Form.Item>
       <ModeField></ModeField>
       <CatalogFrom></CatalogFrom>
+      {/* Offered while a deployment is being created, and not under PD: a
+          recipe configures one engine, and a group's engines live per role. */}
+      {isCreate && !props.pdActive && <RecipeEntry></RecipeEntry>}
       <BackendForm></BackendForm>
       <CustomBackend></CustomBackend>
       {/* 🔴 The PD switch used to sit here, between the backend fields and the

@@ -130,6 +130,16 @@ const baseRoutes = [
         component: './llmodels/catalog'
       },
       {
+        name: 'recipes',
+        path: '/models/recipes',
+        key: 'modelRecipes',
+        icon: 'icon-layers',
+        selectedIcon: 'icon-layers-filled',
+        defaultIcon: 'icon-layers',
+        access: 'canSeeOrgAdmin',
+        component: './llmodels/recipes'
+      },
+      {
         name: 'deployment',
         path: '/models/deployments',
         key: 'modelDeployments',
